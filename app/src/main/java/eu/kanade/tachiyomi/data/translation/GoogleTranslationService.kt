@@ -53,7 +53,7 @@ class GoogleTranslationService(
         source: TranslationLanguage,
         target: TranslationLanguage,
     ): List<String>? {
-        val marked = texts.mapIndexed { index, text -> "$marker($index) $text" }
+        val marked = texts.mapIndexed { index, text -> "${marker(index)} $text" }
             .joinToString(separator = "\n")
 
         val answer = translateWithRetry(marked, source, target)
