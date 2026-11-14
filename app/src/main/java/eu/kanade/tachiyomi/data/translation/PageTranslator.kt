@@ -194,23 +194,44 @@ class PageTranslator(
         }
 
         var script = primary
-        var blocks = readPage(decoder, nativeWidth, nativeHeight, script)
+        val sampleSize = ocrSampleSize(nativeWidth)
+        var blocks = readPage(decoder, nativeWidth, nativeHeight, script, sampleSize)
 
-        // A page can mix scripts (Korean dialogue with English signage), and a wrong guess reads nothing at all.
-        // When the first pass finds next to nothing, the other models get a chance and the richest reading wins.
-        if (source == TranslationLanguage.AUTO && blocks.size < MIN_BLOCKS_BEFORE_RETRY) {
-            for (candidate in OcrScript.entries) {
-                if (candidate == script) continue
-                val attempt = readPage(decoder, nativeWidth, nativeHeight, candidate)
-                if (attempt.size > blocks.size) {
-                    blocks = attempt
-                    script = candidate
+        // A page can mix scripts (Japanese sound effects on an English page, English signage on a Japanese one),
+        // and a wrong guess reads nothing at all. The other common model gets a pass too and its findings are
+        // folded in wherever the first pass had nothing.
+        if (source == TranslationLanguage.AUTO) {
+            val secondary = if (script == OcrScript.LATIN) OcrScript.JAPANESE else OcrScript.LATIN
+            val extra = readPage(decoder, nativeWidth, nativeHeight, secondary, sampleSize)
+            if (blocks.size < MIN_BLOCKS_BEFORE_RETRY || extra.isNotEmpty()) {
+                blocks = mergeReadings(blocks, extra)
+            }
+            // Still nothing usable: the guess itself was wrong, so the remaining models are tried in turn.
+            if (blocks.size < MIN_BLOCKS_BEFORE_RETRY) {
+                for (candidate in OcrScript.entries) {
+                    if (candidate == script || candidate == secondary) continue
+                    val attempt = readPage(decoder, nativeWidth, nativeHeight, candidate, sampleSize)
+                    if (attempt.size > blocks.size) {
+                        blocks = attempt
+                        script = candidate
+                    }
+                    if (blocks.size >= MIN_BLOCKS_BEFORE_RETRY) break
                 }
-                if (blocks.size >= MIN_BLOCKS_BEFORE_RETRY) break
             }
         }
 
+        blocks = enrichSparseBlocks(blocks, decoder, script, nativeWidth, nativeHeight, sampleSize)
+
         return Recognition(blocks, script)
+    }
+
+    private fun ocrSampleSize(nativeWidth: Int): Int {
+        val wantedWidth = when (preferences.ocrQuality.get()) {
+            1 -> TranslationPreferences.OCR_FAST_WIDTH
+            3 -> TranslationPreferences.OCR_ACCURATE_WIDTH
+            else -> TranslationPreferences.OCR_BALANCED_WIDTH
+        }
+        return max(1, ceil(nativeWidth / wantedWidth.toFloat()).toInt())
     }
 
     private suspend fun readPage(
@@ -218,13 +239,8 @@ class PageTranslator(
         nativeWidth: Int,
         nativeHeight: Int,
         script: OcrScript,
+        sampleSize: Int,
     ): List<OcrBlock> {
-        val wantedWidth = when (preferences.ocrQuality.get()) {
-            1 -> TranslationPreferences.OCR_FAST_WIDTH
-            3 -> TranslationPreferences.OCR_ACCURATE_WIDTH
-            else -> TranslationPreferences.OCR_BALANCED_WIDTH
-        }
-        val sampleSize = max(1, ceil(nativeWidth / wantedWidth.toFloat()).toInt())
         val width = nativeWidth / sampleSize
         val height = nativeHeight / sampleSize
 
@@ -240,6 +256,81 @@ class PageTranslator(
                 inScaled = false
             }
             decoder.decodeRegion(region, options)?.let { OcrTile(it, release = true) }
+        }
+    }
+
+    /**
+     * Keeps the first reading and adds whatever the second script found in places the first one left empty.
+     */
+    private fun mergeReadings(primary: List<OcrBlock>, extra: List<OcrBlock>): List<OcrBlock> {
+        if (extra.isEmpty()) return primary
+        val merged = primary.toMutableList()
+        extra.forEach { candidate ->
+            val overlaps = merged.any { existing -> overlapRatio(existing.box, candidate.box) >= 0.3f }
+            if (!overlaps) merged += candidate
+        }
+        return merged.sortedWith(compareBy({ it.box.top }, { it.box.left }))
+    }
+
+    private fun overlapRatio(a: Rect, b: Rect): Float {
+        val left = max(a.left, b.left)
+        val top = max(a.top, b.top)
+        val right = min(a.right, b.right)
+        val bottom = min(a.bottom, b.bottom)
+        if (right <= left || bottom <= top) return 0f
+        val inter = (right - left).toLong() * (bottom - top)
+        val smaller = min(a.width().toLong() * a.height(), b.width().toLong() * b.height()).coerceAtLeast(1)
+        return inter.toFloat() / smaller
+    }
+
+    /**
+     * A big bubble that came back with a word or two was read while something crossed it (a spiky border, a hand,
+     * another line of art). Those boxes are read again at native resolution, and the richer reading wins.
+     */
+    private suspend fun enrichSparseBlocks(
+        blocks: List<OcrBlock>,
+        decoder: BitmapRegionDecoder,
+        script: OcrScript,
+        nativeWidth: Int,
+        nativeHeight: Int,
+        sampleSize: Int,
+    ): List<OcrBlock> {
+        if (blocks.size < 2) return blocks
+
+        val areas = blocks.map { it.box.width().toLong() * it.box.height() }.sorted()
+        val median = areas[areas.size / 2]
+        if (median <= 0) return blocks
+
+        val suspects = blocks
+            .filter { it.text.length <= SPARSE_TEXT_LENGTH && it.box.width().toLong() * it.box.height() > median * 3 }
+            .sortedByDescending { it.box.width().toLong() * it.box.height() }
+            .take(MAX_ENRICHED_BLOCKS)
+
+        if (suspects.isEmpty()) return blocks
+
+        return blocks.map { block ->
+            if (suspects.none { it === block }) return@map block
+
+            val region = Rect(
+                (block.box.left * sampleSize).coerceIn(0, nativeWidth - 1),
+                (block.box.top * sampleSize).coerceIn(0, nativeHeight - 1),
+                (block.box.right * sampleSize).coerceIn(1, nativeWidth),
+                (block.box.bottom * sampleSize).coerceIn(1, nativeHeight),
+            )
+            if (region.width() < 8 || region.height() < 8) return@map block
+
+            val bitmap = runCatching {
+                decoder.decodeRegion(region, BitmapFactory.Options().apply { inScaled = false })
+            }.getOrNull() ?: return@map block
+
+            try {
+                val better = ocrEngine.recognize(bitmap, script)
+                    .joinToString(separator = " ") { it.text }
+                    .trim()
+                if (better.length > block.text.length) OcrBlock(better, block.box) else block
+            } finally {
+                bitmap.recycle()
+            }
         }
     }
 
@@ -378,6 +469,10 @@ class PageTranslator(
 
         /** Fewer readable blocks than this usually means the wrong script was guessed. */
         private const val MIN_BLOCKS_BEFORE_RETRY = 3
+
+        /** A block with this little text inside a box three times the median is a failed reading. */
+        private const val SPARSE_TEXT_LENGTH = 12
+        private const val MAX_ENRICHED_BLOCKS = 3
         private const val DETECTION_SLICE_HEIGHT = 900
         private const val DETECTION_WIDTH = 720
     }
