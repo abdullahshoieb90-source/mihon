@@ -18,3 +18,4 @@ local.properties
 
 # Gradle output captured by the CI build step
 build.log
+spotless.log

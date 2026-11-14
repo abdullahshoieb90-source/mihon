@@ -154,12 +154,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
+          rm -f spotless.log build.log
           if [ -z "$(git status --porcelain)" ]; then
             echo "nothing to format"
             exit 0
           fi
+          git status --short
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- . ':!build.log'
+          git add -A -- . ':!build.log' ':!spotless.log'
           git commit -m "Apply code format"
-          git push
+          git push origin "HEAD:${GITHUB_REF_NAME}"
