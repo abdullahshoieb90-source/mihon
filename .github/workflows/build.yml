@@ -29,8 +29,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Dependency review needs the dependency graph, which forks don't have: it failed every pull request
+      # here with "Dependency review is not supported on this repository".
       - name: Dependency Review
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.repository == 'mihonapp/mihon'
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
 
       - name: Set up JDK

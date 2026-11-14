@@ -8,8 +8,8 @@ import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.getEnum
 import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationLetterCase
-import tachiyomi.domain.translation.model.TranslationTextColor
 import tachiyomi.domain.translation.model.TranslationProvider
+import tachiyomi.domain.translation.model.TranslationTextColor
 import java.util.Locale
 
 @Inject
