@@ -241,7 +241,7 @@ class OcrEngine {
 
             val vertical = group.count { it.isTall } * 2 >= group.size
             val text = if (vertical) textOfVerticalGroup(group) else textOfHorizontalGroup(group)
-            if (text.count { it.isLetterOrDigit() } < 2) null else OcrBlock(text, box)
+            if (text.count { it.isLetter() } < 2) null else OcrBlock(text, box)
         }.sortedWith(compareBy({ it.box.top }, { it.box.left }))
     }
 

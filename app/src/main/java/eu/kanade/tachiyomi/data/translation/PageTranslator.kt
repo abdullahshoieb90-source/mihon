@@ -91,6 +91,7 @@ class PageTranslator(
                 val recognition = recognize(decoder, nativeWidth, nativeHeight, source)
                 val blocks = recognition.blocks
                     .filter { it.text.count { char -> char.isLetter() } >= MIN_LETTERS }
+                    .filterNot { it.text.isSoundEffect() }
                 if (blocks.isEmpty()) throw TranslationException(TranslationError.NO_TEXT_FOUND)
 
                 // Text positions are read at the OCR scale and have to be drawn on the displayed bitmap.
@@ -185,13 +186,39 @@ class PageTranslator(
         nativeHeight: Int,
         source: TranslationLanguage,
     ): Recognition {
-        val script = source.ocrScript ?: run {
+        val primary = source.ocrScript ?: run {
             if (source != TranslationLanguage.AUTO) {
                 throw TranslationException(TranslationError.UNSUPPORTED_SOURCE_SCRIPT)
             }
             detectScript(decoder, nativeWidth, nativeHeight)
         }
 
+        var script = primary
+        var blocks = readPage(decoder, nativeWidth, nativeHeight, script)
+
+        // A page can mix scripts (Korean dialogue with English signage), and a wrong guess reads nothing at all.
+        // When the first pass finds next to nothing, the other models get a chance and the richest reading wins.
+        if (source == TranslationLanguage.AUTO && blocks.size < MIN_BLOCKS_BEFORE_RETRY) {
+            for (candidate in OcrScript.entries) {
+                if (candidate == script) continue
+                val attempt = readPage(decoder, nativeWidth, nativeHeight, candidate)
+                if (attempt.size > blocks.size) {
+                    blocks = attempt
+                    script = candidate
+                }
+                if (blocks.size >= MIN_BLOCKS_BEFORE_RETRY) break
+            }
+        }
+
+        return Recognition(blocks, script)
+    }
+
+    private suspend fun readPage(
+        decoder: BitmapRegionDecoder,
+        nativeWidth: Int,
+        nativeHeight: Int,
+        script: OcrScript,
+    ): List<OcrBlock> {
         val wantedWidth = when (preferences.ocrQuality.get()) {
             1 -> TranslationPreferences.OCR_FAST_WIDTH
             3 -> TranslationPreferences.OCR_ACCURATE_WIDTH
@@ -201,7 +228,7 @@ class PageTranslator(
         val width = nativeWidth / sampleSize
         val height = nativeHeight / sampleSize
 
-        val blocks = ocrEngine.recognizeTiles(width, height, script) { tile ->
+        return ocrEngine.recognizeTiles(width, height, script) { tile ->
             val region = Rect(
                 tile.left * sampleSize,
                 tile.top * sampleSize,
@@ -214,7 +241,6 @@ class PageTranslator(
             }
             decoder.decodeRegion(region, options)?.let { OcrTile(it, release = true) }
         }
-        return Recognition(blocks, script)
     }
 
     /**
@@ -294,9 +320,24 @@ class PageTranslator(
      * into broken sentences.
      */
     private fun String.normalizeForTranslation(): String = this
+        // Control characters and the box-drawing bars the recognizer likes to add around lettering.
+        .replace(Regex("[\\u0000-\\u001F\\u007F]"), " ")
+        .replace(Regex("[\\u2500-\\u257F|｜│¦_~^`]+"), " ")
         .replace(Regex("\\s+"), " ")
-        .replace(Regex("\\.{2,}|…+"), "…")
-        .trim()
+        .replace(Regex("\\.{2,}|…{2,}"), "…")
+        .replace(Regex("([!?！？])\\1+"), "$1")
+        .trim(' ', '-', '_', '.', ',', '·', '|', '~', '…', '「', '」', '『', '』')
+
+    /**
+     * Sound effects are drawn in fat capitals ("GUD", "STEP") and translating them only paints nonsense over the art.
+     * Dialogue never looks like that, so short all-capital Latin blocks are left alone.
+     */
+    private fun String.isSoundEffect(): Boolean {
+        val letters = filter { it.isLetter() }
+        if (letters.length !in 2..6) return false
+        if (letters.any { it.code > 0x2FF }) return false
+        return letters.all { it.isUpperCase() }
+    }
 
     /** The language a script is normally written in, used when the reader left the source on automatic. */
     private fun OcrScript.defaultLanguage(): TranslationLanguage = when (this) {
@@ -327,6 +368,9 @@ class PageTranslator(
 
         private const val DISPLAY_PIXEL_BUDGET = 8_000_000L
         private const val PREVIEW_WIDTH = 160
+
+        /** Fewer readable blocks than this usually means the wrong script was guessed. */
+        private const val MIN_BLOCKS_BEFORE_RETRY = 3
         private const val DETECTION_SLICE_HEIGHT = 900
         private const val DETECTION_WIDTH = 720
     }
