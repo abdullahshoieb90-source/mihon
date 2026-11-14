@@ -948,6 +948,8 @@
     <string name="translation_case_original">الأصلية</string>
     <string name="translation_case_upper">ABC</string>
     <string name="translation_case_lower">abc</string>
+    <string name="pref_translation_explicit">حوار صريح (18+)</string>
+    <string name="pref_translation_explicit_summary">يحافظ على الألفاظ الصريحة دون تلطيف أو حذف. يعمل مع خدمات الذكاء الاصطناعي.</string>
     <string name="pref_category_translation_ocr">قراءة الصور</string>
     <string name="pref_translation_ocr_quality">جودة القراءة</string>
     <string name="pref_translation_ocr_quality_summary">«سريع» يقرأ الخطوط العريضة فقط، و«دقيق» يقرأ كل سطر. الصفحات البطيئة تُقرأ بتفصيل أقل.</string>

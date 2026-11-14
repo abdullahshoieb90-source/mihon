@@ -1136,6 +1136,8 @@
     <string name="translation_case_original">As written</string>
     <string name="translation_case_upper">ABC</string>
     <string name="translation_case_lower">abc</string>
+    <string name="pref_translation_explicit">Mature dialogue (18+)</string>
+    <string name="pref_translation_explicit_summary">Keeps the explicit wording instead of softening it. Works with the AI services.</string>
     <string name="pref_category_translation_ocr">Reading the images</string>
     <string name="pref_translation_ocr_quality">Reading quality</string>
     <string name="pref_translation_ocr_quality_summary">Fast reads only the outlines, accurate reads every line. Slow pages are read in less detail.</string>

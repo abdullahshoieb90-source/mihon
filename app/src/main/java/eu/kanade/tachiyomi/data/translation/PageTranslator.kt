@@ -334,8 +334,10 @@ class PageTranslator(
      */
     private fun String.isSoundEffect(): Boolean {
         val letters = filter { it.isLetter() }
-        if (letters.length !in 2..6) return false
+        if (letters.length !in 3..6) return false
         if (letters.any { it.code > 0x2FF }) return false
+        // "HAA…", "NO", "AH" are moans and shouts from the dialogue, not lettering drawn over the art.
+        if (letters.lowercase() in DIALOGUE_SHOUTS) return false
         return letters.all { it.isUpperCase() }
     }
 
@@ -365,6 +367,11 @@ class PageTranslator(
     companion object {
         /** Blocks with fewer letters are ellipsis dots, page numbers or noise, not dialogue. */
         private const val MIN_LETTERS = 2
+
+        private val DIALOGUE_SHOUTS = setOf(
+            "ah", "ahh", "aah", "ha", "haa", "hah", "oh", "ooh", "no", "yes", "hm", "hmm", "mm", "uh", "eh",
+            "hey", "ow", "ouch", "wow", "gah", "gya", "kya", "nya", "ugh", "argh",
+        )
 
         private const val DISPLAY_PIXEL_BUDGET = 8_000_000L
         private const val PREVIEW_WIDTH = 160

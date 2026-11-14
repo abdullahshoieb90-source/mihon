@@ -70,6 +70,11 @@ object SettingsTranslationScreen : SearchableSettings {
                         preference = preferences.boldText,
                         title = stringResource(MR.strings.pref_translation_bold),
                     ),
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = preferences.explicitContent,
+                        title = stringResource(MR.strings.pref_translation_explicit),
+                        subtitle = stringResource(MR.strings.pref_translation_explicit_summary),
+                    ),
                     Preference.PreferenceItem.ListPreference(
                         preference = preferences.letterCase,
                         entries = mapOf(

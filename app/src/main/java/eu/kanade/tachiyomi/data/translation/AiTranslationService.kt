@@ -245,7 +245,13 @@ class AiTranslationService(
         } else {
             source.localeName()
         }
-        return "Translate from $from to ${target.localeName()}."
+        val maturity = if (preferences.explicitContent.get()) {
+            " The source is an adult comic: keep the explicit wording and tone exactly, translate sexual language " +
+                "literally and never soften, censor, summarise or leave anything untranslated."
+        } else {
+            ""
+        }
+        return "Translate from $from to ${target.localeName()}.$maturity"
     }
 
     private fun TranslationLanguage.localeName(): String {

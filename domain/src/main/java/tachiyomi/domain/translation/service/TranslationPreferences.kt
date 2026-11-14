@@ -80,6 +80,12 @@ class TranslationPreferences(
         "claude-3-5-haiku-latest",
     )
 
+    /** Keeps the adult tone of mature pages instead of softening it. */
+    val explicitContent: Preference<Boolean> = preferenceStore.getBoolean(
+        "pref_translation_explicit_content",
+        false,
+    )
+
     val textColor: Preference<TranslationTextColor> = preferenceStore.getEnum(
         "pref_translation_text_color",
         TranslationTextColor.AUTO,
