@@ -120,8 +120,35 @@ jobs:
 
       # Kept after the APK steps so a formatting nit never costs you the build.
       - name: Check code format
+        id: spotless
         continue-on-error: true
-        run: ./gradlew spotlessCheck
+        run: |-
+          set -o pipefail
+          ./gradlew spotlessCheck 2>&1 | tee spotless.log || true
+
+      # The raw log isn't reachable from outside, the annotations are.
+      - name: Annotate format problems
+        run: |-
+          python3 - <<'PY'
+          try:
+              lines = open("spotless.log", encoding="utf-8", errors="replace").read().splitlines()
+          except FileNotFoundError:
+              lines = []
+
+          picked = []
+          for index, line in enumerate(lines):
+              if "found problem in" in line or "found problems in" in line:
+                  picked.append(line.strip())
+                  picked.extend(l.strip() for l in lines[index + 1:index + 4])
+              elif "The following files had format violations" in line:
+                  picked.append(line.strip())
+
+          if not picked:
+              picked = [l.strip() for l in lines[-25:] if l.strip()]
+          for line in picked[:25]:
+              msg = line.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::error::{msg[:900]}")
+          PY
 
       - name: Commit formatting
         env:
