@@ -5,13 +5,17 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
+import okhttp3.FormBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
 import tachiyomi.domain.translation.model.TranslationLanguage
 
 /**
- * Uses the endpoint behind Google Translate's web widget. It needs no key, but it's unofficial and only takes one
- * text per request.
+ * Uses the endpoint behind Google Translate's web widget. It needs no key, but it's unofficial.
+ *
+ * The whole page goes out as a single request: every bubble is prefixed with a numbered marker, so the service sees
+ * one text and can keep the names, the pronouns and the tone consistent between the bubbles. The markers survive the
+ * translation untouched, and if they ever don't, the page falls back to translating bubble by bubble.
  */
 class GoogleTranslationService(
     private val networkHelper: NetworkHelper,
@@ -22,12 +26,58 @@ class GoogleTranslationService(
         source: TranslationLanguage,
         target: TranslationLanguage,
     ): List<String> {
+        if (texts.isEmpty()) return emptyList()
+
+        if (texts.count { it.isNotBlank() } > 1) {
+            val batched = runCatching {
+                translateBatch(texts, source, target)
+            }.getOrNull()
+            if (batched != null) return batched
+        }
+
         return texts.mapIndexed { index, text ->
             if (text.isBlank()) {
                 text
             } else {
                 if (index > 0) delay(REQUEST_INTERVAL_MILLIS)
                 translateWithRetry(text, source, target)
+            }
+        }
+    }
+
+    /**
+     * One request for the whole page, answered with the same markers back so each translation finds its bubble.
+     */
+    private suspend fun translateBatch(
+        texts: List<String>,
+        source: TranslationLanguage,
+        target: TranslationLanguage,
+    ): List<String>? {
+        val marked = texts.mapIndexed { index, text -> "$marker($index) $text" }
+            .joinToString(separator = "\n")
+
+        val answer = translateWithRetry(marked, source, target)
+        val parts = splitByMarkers(answer)
+        if (parts.size != texts.size) return null
+
+        val restored = texts.indices.map { index ->
+            parts[index]?.takeIf { texts[index].isNotBlank() } ?: texts[index]
+        }
+        // Every bubble that had text has to come back translated, otherwise the batch isn't trustworthy.
+        if (texts.indices.any { texts[it].isNotBlank() && restored[it].isBlank() }) return null
+        return restored
+    }
+
+    private fun splitByMarkers(answer: String): Map<Int, String> {
+        val matches = MARKER_PATTERN.findAll(answer).toList()
+        if (matches.isEmpty()) return emptyMap()
+
+        return buildMap {
+            matches.forEachIndexed { position, match ->
+                val index = match.groupValues[1].toIntOrNull() ?: return@forEachIndexed
+                val start = match.range.last + 1
+                val end = matches.getOrNull(position + 1)?.range?.first ?: answer.length
+                put(index, answer.substring(start, end).trim())
             }
         }
     }
@@ -57,17 +107,11 @@ class GoogleTranslationService(
         source: TranslationLanguage,
         target: TranslationLanguage,
     ): String {
-        val url = ENDPOINT.toHttpUrl().newBuilder()
-            .addQueryParameter("client", "gtx")
-            .addQueryParameter("sl", source.googleCode())
-            .addQueryParameter("tl", target.googleCode())
-            .addQueryParameter("dt", "t")
-            .addQueryParameter("q", text)
-            .build()
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", networkHelper.defaultUserAgentProvider())
-            .build()
+        val request = if (text.length <= MAX_QUERY_LENGTH) {
+            getRequest(text, source, target)
+        } else {
+            postRequest(text, source, target)
+        }
 
         val body = networkHelper.client.executeForBody(request)
         val sentences = runCatching {
@@ -84,6 +128,36 @@ class GoogleTranslationService(
         }
     }
 
+    private fun getRequest(text: String, source: TranslationLanguage, target: TranslationLanguage): Request {
+        val url = ENDPOINT.toHttpUrl().newBuilder()
+            .addQueryParameter("client", "gtx")
+            .addQueryParameter("sl", source.googleCode())
+            .addQueryParameter("tl", target.googleCode())
+            .addQueryParameter("dt", "t")
+            .addQueryParameter("q", text)
+            .build()
+        return Request.Builder()
+            .url(url)
+            .header("User-Agent", networkHelper.defaultUserAgentProvider())
+            .build()
+    }
+
+    /** A page worth of dialogue doesn't fit in a URL. */
+    private fun postRequest(text: String, source: TranslationLanguage, target: TranslationLanguage): Request {
+        val form = FormBody.Builder()
+            .add("client", "gtx")
+            .add("sl", source.googleCode())
+            .add("tl", target.googleCode())
+            .add("dt", "t")
+            .add("q", text)
+            .build()
+        return Request.Builder()
+            .url(ENDPOINT)
+            .header("User-Agent", networkHelper.defaultUserAgentProvider())
+            .post(form)
+            .build()
+    }
+
     private fun TranslationLanguage.googleCode(): String = when (this) {
         TranslationLanguage.CHINESE_SIMPLIFIED -> "zh-CN"
         TranslationLanguage.CHINESE_TRADITIONAL -> "zh-TW"
@@ -95,5 +169,11 @@ class GoogleTranslationService(
         private const val REQUEST_INTERVAL_MILLIS = 100L
         private const val RETRY_DELAY_MILLIS = 400L
         private const val MAX_ATTEMPTS = 3
+        private const val MAX_QUERY_LENGTH = 1_500
+
+        /** `[[[3]]]`, tolerant of the spaces a translation engine may add. */
+        private val MARKER_PATTERN = Regex("""\[\s*\[\s*\[\s*(\d+)\s*\]\s*\]\s*\]""")
+
+        private fun marker(index: Int): String = "[[[$index]]]"
     }
 }
