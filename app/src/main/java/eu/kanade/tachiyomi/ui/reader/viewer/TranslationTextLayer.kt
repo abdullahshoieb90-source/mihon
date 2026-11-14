@@ -91,7 +91,9 @@ class TranslationTextLayer(context: Context) : View(context) {
         val baseTextSize = (reference / TEXT_HEIGHT_DIVISOR)
             .coerceIn(MIN_TEXT_SIZE_DP * density, MAX_TEXT_SIZE_DP * density)
 
-        placed.forEach { (block, box) -> drawBlock(canvas, block, bitmap, page.previewScale, box, margin, baseTextSize) }
+        placed.forEach { (block, box) ->
+            drawBlock(canvas, block, bitmap, page.previewScale, box, margin, baseTextSize)
+        }
     }
 
     private fun mapBlock(

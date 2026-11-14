@@ -265,7 +265,6 @@ class ReaderActivity : BaseActivity() {
                 ReaderNavigationOverlay(state = navigationOverlayState)
 
                 AppBars(state = state)
-
             }
 
             if (state.isLoadingAdjacentChapter) {

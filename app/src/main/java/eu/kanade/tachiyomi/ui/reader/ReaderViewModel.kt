@@ -75,11 +75,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
 import mihon.core.metro.AppCoroutineScope
 import mihon.data.cache.ChapterCache
@@ -1044,7 +1044,9 @@ class ReaderViewModel(
                 toastTranslationError(e)
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
-                context.toast(context.stringResource(MR.strings.translation_failed, e.message.orEmpty().replace("%", "%%")))
+                context.toast(
+                    context.stringResource(MR.strings.translation_failed, e.message.orEmpty().replace("%", "%%")),
+                )
             } finally {
                 translationJobs.remove(page.index)
             }

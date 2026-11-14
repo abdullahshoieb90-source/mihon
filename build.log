@@ -1,0 +1,670 @@
+Isolated Projects is an incubating feature.
+Calculating task graph as no cached configuration is available for tasks: assembleDebug
+Type-safe project accessors is an incubating feature.
+> Task :build-logic:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :build-logic:compileKotlin UP-TO-DATE
+> Task :build-logic:compileJava NO-SOURCE
+> Task :build-logic:pluginDescriptors UP-TO-DATE
+> Task :build-logic:processResources UP-TO-DATE
+> Task :build-logic:classes UP-TO-DATE
+> Task :build-logic:jar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugResources
+> Task :app:replaceDebugShortcutPlaceholder
+> Task :core-metadata:preBuild UP-TO-DATE
+> Task :core-metadata:preDebugBuild UP-TO-DATE
+> Task :core-metadata:generateDebugResources
+> Task :core-metadata:packageDebugResources
+> Task :data:preBuild UP-TO-DATE
+> Task :data:preDebugBuild UP-TO-DATE
+> Task :data:generateDebugResources FROM-CACHE
+> Task :data:packageDebugResources
+> Task :domain:preBuild UP-TO-DATE
+> Task :domain:preDebugBuild UP-TO-DATE
+> Task :domain:generateDebugResources FROM-CACHE
+> Task :domain:packageDebugResources
+> Task :i18n:generateAndroidMainLocalesConfig
+> Task :i18n:generateMRcommonTest
+> Task :i18n:generateMRandroidHostTest
+> Task :i18n:generateMRcommonMain
+> Task :app:prepareLibraryDefinitionsDebug
+> Task :i18n:androidPreBuild UP-TO-DATE
+> Task :i18n:preAndroidMainBuild UP-TO-DATE
+> Task :presentation-core:preBuild UP-TO-DATE
+> Task :presentation-core:preDebugBuild UP-TO-DATE
+> Task :presentation-core:generateDebugResources
+> Task :presentation-core:packageDebugResources
+> Task :presentation-widget:preBuild UP-TO-DATE
+> Task :presentation-widget:preDebugBuild UP-TO-DATE
+> Task :presentation-widget:generateDebugResources
+> Task :presentation-widget:packageDebugResources
+> Task :source-api:preBuild UP-TO-DATE
+> Task :source-api:preDebugBuild UP-TO-DATE
+> Task :source-api:generateDebugResources FROM-CACHE
+> Task :source-api:packageDebugResources
+> Task :source-local:preBuild UP-TO-DATE
+> Task :source-local:preDebugBuild UP-TO-DATE
+> Task :source-local:generateDebugResources FROM-CACHE
+> Task :source-local:packageDebugResources
+> Task :telemetry:preBuild UP-TO-DATE
+> Task :telemetry:preDebugBuild UP-TO-DATE
+> Task :telemetry:generateDebugResources FROM-CACHE
+> Task :telemetry:packageDebugResources
+> Task :core:archive:preBuild UP-TO-DATE
+> Task :core:archive:preDebugBuild UP-TO-DATE
+> Task :core:archive:generateDebugResources FROM-CACHE
+> Task :core:archive:packageDebugResources
+> Task :core:common:preBuild UP-TO-DATE
+> Task :core:common:preDebugBuild UP-TO-DATE
+> Task :core:common:generateDebugResources FROM-CACHE
+> Task :core:common:packageDebugResources
+> Task :core:metro:preBuild UP-TO-DATE
+> Task :core:metro:preDebugBuild UP-TO-DATE
+> Task :core:metro:generateDebugResources FROM-CACHE
+> Task :core:metro:packageDebugResources
+> Task :icons:custom-material-symbols:preBuild UP-TO-DATE
+> Task :icons:custom-material-symbols:preDebugBuild UP-TO-DATE
+> Task :icons:custom-material-symbols:generateDebugResources FROM-CACHE
+> Task :icons:custom-material-symbols:packageDebugResources
+> Task :icons:material-symbols:preBuild UP-TO-DATE
+> Task :icons:material-symbols:preDebugBuild UP-TO-DATE
+> Task :icons:material-symbols:generateDebugResources
+> Task :icons:material-symbols:generateDebugVectorDrawables
+> Task :icons:material-symbols:packageDebugResources
+> Task :icons:simple-icons:preBuild UP-TO-DATE
+> Task :icons:simple-icons:preDebugBuild UP-TO-DATE
+> Task :icons:simple-icons:generateDebugResources FROM-CACHE
+> Task :icons:simple-icons:packageDebugResources
+> Task :app:packageDebugResources
+> Task :core-metadata:processDebugNavigationResources
+> Task :data:processDebugNavigationResources FROM-CACHE
+> Task :domain:processDebugNavigationResources FROM-CACHE
+> Task :i18n:generateAndroidMainEmptyResourceFiles
+> Task :presentation-core:processDebugNavigationResources
+> Task :presentation-widget:processDebugNavigationResources
+> Task :source-api:processDebugNavigationResources FROM-CACHE
+> Task :source-local:processDebugNavigationResources FROM-CACHE
+> Task :telemetry:processDebugNavigationResources FROM-CACHE
+> Task :core:archive:processDebugNavigationResources FROM-CACHE
+> Task :core:common:processDebugNavigationResources FROM-CACHE
+> Task :core:metro:processDebugNavigationResources FROM-CACHE
+> Task :icons:custom-material-symbols:processDebugNavigationResources FROM-CACHE
+> Task :icons:material-symbols:processDebugNavigationResources
+> Task :icons:simple-icons:processDebugNavigationResources FROM-CACHE
+> Task :i18n:generateMRandroidMain
+> Task :i18n:packageAndroidMainResources
+> Task :app:processDebugNavigationResources
+> Task :app:compileDebugAidl
+> Task :app:dataBindingMergeDependencyArtifactsDebug
+> Task :core-metadata:parseDebugLocalResources
+> Task :data:parseDebugLocalResources
+> Task :app:parseDebugLocalResources
+> Task :domain:parseDebugLocalResources FROM-CACHE
+> Task :core-metadata:generateDebugRFile
+> Task :data:generateDebugRFile
+> Task :domain:generateDebugRFile
+> Task :presentation-core:parseDebugLocalResources
+> Task :i18n:parseAndroidMainLocalResources
+> Task :presentation-widget:parseDebugLocalResources
+> Task :presentation-core:generateDebugRFile
+> Task :i18n:generateAndroidMainRFile
+> Task :source-local:parseDebugLocalResources FROM-CACHE
+> Task :source-api:parseDebugLocalResources FROM-CACHE
+> Task :presentation-widget:generateDebugRFile
+> Task :telemetry:parseDebugLocalResources FROM-CACHE
+> Task :source-local:generateDebugRFile
+> Task :source-api:generateDebugRFile
+> Task :core:archive:parseDebugLocalResources FROM-CACHE
+> Task :core:common:parseDebugLocalResources FROM-CACHE
+> Task :telemetry:generateDebugRFile
+> Task :core:metro:parseDebugLocalResources FROM-CACHE
+> Task :core:archive:generateDebugRFile
+> Task :core:common:generateDebugRFile
+> Task :core:metro:generateDebugRFile
+> Task :icons:custom-material-symbols:parseDebugLocalResources FROM-CACHE
+> Task :icons:simple-icons:parseDebugLocalResources FROM-CACHE
+> Task :icons:custom-material-symbols:generateDebugRFile
+> Task :icons:material-symbols:parseDebugLocalResources
+> Task :icons:simple-icons:generateDebugRFile
+> Task :icons:material-symbols:generateDebugRFile
+> Task :app:generateDebugRFile
+> Task :app:generateDebugBuildConfig
+> Task :app:generateShikimoriApolloOptions
+> Task :app:generateAnilistApolloOptions
+> Task :app:generateKitsuApolloOptions
+> Task :app:generateShikimoriApolloSources
+> Task :app:generateSuwayomiApolloOptions
+> Task :app:generateAnilistApolloSources
+> Task :i18n:kmpPartiallyResolvedDependenciesChecker
+> Task :i18n:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateKitsuApolloSources
+> Task :app:generateSuwayomiApolloSources
+> Task :app:mergeDebugResources
+> Task :core:metro:javaPreCompileDebug
+> Task :core:common:javaPreCompileDebug FROM-CACHE
+> Task :source-api:javaPreCompileDebug FROM-CACHE
+> Task :core-metadata:javaPreCompileDebug FROM-CACHE
+> Task :app:dataBindingGenBaseClassesDebug
+> Task :domain:javaPreCompileDebug FROM-CACHE
+> Task :data:javaPreCompileDebug FROM-CACHE
+> Task :icons:material-symbols:generateValkyrieImageVectorAndroidTest SKIPPED
+> Task :icons:material-symbols:generateValkyrieImageVectorAndroidTestDebug SKIPPED
+> Task :icons:material-symbols:generateValkyrieImageVectorAndroidTestRelease SKIPPED
+> Task :icons:material-symbols:generateValkyrieImageVectorDebug SKIPPED
+
+> Task :icons:material-symbols:generateValkyrieImageVectorMain
+Found icons names that conflict with reserved Compose qualifiers. Full qualified import will be used for: "Brush"
+Generated "MaterialSymbols" iconpack in package "mihon.icons.materialsymbols"
+Generated 89 ImageVector icons in nested pack "Rounded" (package: "mihon.icons.materialsymbols.rounded")
+Generated 9 ImageVector icons in nested pack "AutoMirroredRounded" (package: "mihon.icons.materialsymbols.automirroredrounded")
+Generated 23 ImageVector icons in nested pack "RoundedFilled" (package: "mihon.icons.materialsymbols.roundedfilled")
+Generated 1 ImageVector icon in nested pack "AutoMirroredRoundedFilled" (package: "mihon.icons.materialsymbols.automirroredroundedfilled")
+
+> Task :icons:material-symbols:generateValkyrieImageVectorRelease SKIPPED
+> Task :icons:material-symbols:generateValkyrieImageVectorTest SKIPPED
+> Task :icons:material-symbols:generateValkyrieImageVectorTestDebug SKIPPED
+> Task :icons:material-symbols:generateValkyrieImageVectorTestFixtures SKIPPED
+> Task :icons:material-symbols:generateValkyrieImageVectorTestFixturesDebug SKIPPED
+> Task :icons:material-symbols:generateValkyrieImageVectorTestFixturesRelease SKIPPED
+> Task :icons:material-symbols:generateValkyrieImageVectorTestRelease SKIPPED
+> Task :data:generateDebugDatabaseInterface
+> Task :icons:material-symbols:javaPreCompileDebug FROM-CACHE
+> Task :presentation-core:javaPreCompileDebug FROM-CACHE
+> Task :presentation-widget:javaPreCompileDebug FROM-CACHE
+> Task :core:metro:compileDebugKotlin
+> Task :core:metro:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:metro:bundleLibCompileToJarDebug
+> Task :core:archive:javaPreCompileDebug FROM-CACHE
+> Task :source-local:javaPreCompileDebug FROM-CACHE
+> Task :telemetry:javaPreCompileDebug FROM-CACHE
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorAndroidTest SKIPPED
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorAndroidTestDebug SKIPPED
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorAndroidTestRelease SKIPPED
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorDebug SKIPPED
+
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorMain
+Generated "CustomMaterialSymbols" iconpack in package "mihon.icons.custommaterialsymbols"
+Generated 9 ImageVector icons in nested pack "Rounded" (package: "mihon.icons.custommaterialsymbols.rounded")
+
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorRelease SKIPPED
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorTest SKIPPED
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorTestDebug SKIPPED
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorTestFixtures SKIPPED
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorTestFixturesDebug SKIPPED
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorTestFixturesRelease SKIPPED
+> Task :icons:custom-material-symbols:generateValkyrieImageVectorTestRelease SKIPPED
+> Task :core:archive:compileDebugKotlin
+> Task :core:archive:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:archive:bundleLibCompileToJarDebug
+> Task :icons:custom-material-symbols:javaPreCompileDebug FROM-CACHE
+> Task :icons:simple-icons:generateValkyrieImageVectorAndroidTest SKIPPED
+> Task :icons:simple-icons:generateValkyrieImageVectorAndroidTestDebug SKIPPED
+> Task :icons:simple-icons:generateValkyrieImageVectorAndroidTestRelease SKIPPED
+> Task :icons:simple-icons:generateValkyrieImageVectorDebug SKIPPED
+
+> Task :icons:simple-icons:generateValkyrieImageVectorMain
+Generated "SimpleIcons" iconpack in package "mihon.icons.simpleicons"
+Generated 7 ImageVector icons in package "mihon.icons.simpleicons"
+
+> Task :icons:simple-icons:generateValkyrieImageVectorRelease SKIPPED
+> Task :icons:simple-icons:generateValkyrieImageVectorTest SKIPPED
+> Task :icons:simple-icons:generateValkyrieImageVectorTestDebug SKIPPED
+> Task :icons:simple-icons:generateValkyrieImageVectorTestFixtures SKIPPED
+> Task :icons:simple-icons:generateValkyrieImageVectorTestFixturesDebug SKIPPED
+> Task :icons:simple-icons:generateValkyrieImageVectorTestFixturesRelease SKIPPED
+> Task :icons:simple-icons:generateValkyrieImageVectorTestRelease SKIPPED
+> Task :icons:custom-material-symbols:compileDebugKotlin
+> Task :icons:custom-material-symbols:compileDebugJavaWithJavac NO-SOURCE
+> Task :icons:simple-icons:compileDebugKotlin
+> Task :icons:custom-material-symbols:bundleLibCompileToJarDebug
+> Task :icons:simple-icons:javaPreCompileDebug FROM-CACHE
+> Task :app:javaPreCompileDebug FROM-CACHE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :core-metadata:generateDebugAssets UP-TO-DATE
+> Task :icons:simple-icons:compileDebugJavaWithJavac NO-SOURCE
+> Task :icons:simple-icons:bundleLibCompileToJarDebug
+> Task :data:generateDebugAssets UP-TO-DATE
+> Task :i18n:compileAndroidMain
+> Task :core-metadata:mergeDebugAssets
+> Task :domain:generateDebugAssets UP-TO-DATE
+> Task :i18n:bundleAndroidMainClassesToCompileJar
+> Task :data:mergeDebugAssets
+> Task :i18n:generateAndroidMainAssets UP-TO-DATE
+> Task :domain:mergeDebugAssets
+> Task :presentation-core:generateDebugAssets UP-TO-DATE
+> Task :i18n:mergeAndroidMainAssets
+> Task :presentation-widget:generateDebugAssets UP-TO-DATE
+> Task :presentation-core:mergeDebugAssets
+> Task :source-api:generateDebugAssets UP-TO-DATE
+> Task :presentation-widget:mergeDebugAssets
+> Task :source-local:generateDebugAssets UP-TO-DATE
+> Task :source-api:mergeDebugAssets
+> Task :telemetry:generateDebugAssets UP-TO-DATE
+> Task :telemetry:mergeDebugAssets
+> Task :core:archive:generateDebugAssets UP-TO-DATE
+> Task :core:archive:mergeDebugAssets
+> Task :core:common:generateDebugAssets UP-TO-DATE
+> Task :core:common:mergeDebugAssets
+> Task :core:metro:generateDebugAssets UP-TO-DATE
+> Task :core:metro:mergeDebugAssets
+> Task :icons:custom-material-symbols:generateDebugAssets UP-TO-DATE
+> Task :source-local:mergeDebugAssets
+> Task :icons:material-symbols:generateDebugAssets UP-TO-DATE
+> Task :icons:custom-material-symbols:mergeDebugAssets
+> Task :icons:simple-icons:generateDebugAssets UP-TO-DATE
+> Task :icons:material-symbols:mergeDebugAssets
+> Task :icons:simple-icons:mergeDebugAssets
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+> Task :app:generateDebugGlobalSynthetics
+> Task :i18n:compressAndroidMainJavaRes
+> Task :core:archive:compressDebugJavaRes
+> Task :core:metro:compressDebugJavaRes
+> Task :icons:custom-material-symbols:compressDebugJavaRes
+> Task :icons:simple-icons:compressDebugJavaRes
+> Task :app:l8DexDesugarLibDebug
+> Task :icons:material-symbols:compileDebugKotlin
+> Task :icons:material-symbols:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:desugarDebugFileDependencies
+> Task :icons:material-symbols:compressDebugJavaRes
+> Task :icons:custom-material-symbols:bundleLibRuntimeToDirDebug
+> Task :icons:material-symbols:bundleLibCompileToJarDebug
+> Task :app:checkDebugDuplicateClasses
+> Task :icons:material-symbols:bundleLibRuntimeToDirDebug
+> Task :core:common:compileDebugKotlin
+> Task :core:common:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:mergeExtDexDebug
+> Task :icons:simple-icons:bundleLibRuntimeToDirDebug
+> Task :i18n:bundleLibRuntimeToDirAndroidMain
+> Task :core:common:bundleLibCompileToJarDebug
+> Task :core:common:compressDebugJavaRes
+> Task :core:common:bundleLibRuntimeToDirDebug
+> Task :source-api:compileDebugKotlin
+> Task :source-api:compileDebugJavaWithJavac NO-SOURCE
+> Task :source-api:bundleLibCompileToJarDebug
+> Task :telemetry:compileDebugKotlin
+> Task :core-metadata:compileDebugKotlin
+> Task :core-metadata:compileDebugJavaWithJavac NO-SOURCE
+> Task :core-metadata:bundleLibCompileToJarDebug
+> Task :telemetry:compileDebugJavaWithJavac NO-SOURCE
+> Task :telemetry:bundleLibCompileToJarDebug
+> Task :core-metadata:compressDebugJavaRes
+> Task :source-api:compressDebugJavaRes
+> Task :telemetry:compressDebugJavaRes
+> Task :core-metadata:bundleLibRuntimeToDirDebug
+> Task :source-api:bundleLibRuntimeToDirDebug
+> Task :telemetry:bundleLibRuntimeToDirDebug
+> Task :core:archive:bundleLibRuntimeToDirDebug
+> Task :core:metro:bundleLibRuntimeToDirDebug
+> Task :core-metadata:writeDebugAarMetadata
+> Task :data:writeDebugAarMetadata
+> Task :domain:writeDebugAarMetadata
+> Task :i18n:writeAndroidMainAarMetadata
+> Task :presentation-core:writeDebugAarMetadata
+> Task :presentation-widget:writeDebugAarMetadata
+> Task :source-api:writeDebugAarMetadata
+> Task :source-local:writeDebugAarMetadata
+> Task :telemetry:writeDebugAarMetadata
+> Task :core:archive:writeDebugAarMetadata
+> Task :core:common:writeDebugAarMetadata
+> Task :core:metro:writeDebugAarMetadata
+> Task :icons:custom-material-symbols:writeDebugAarMetadata
+> Task :icons:material-symbols:writeDebugAarMetadata
+> Task :icons:simple-icons:writeDebugAarMetadata
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:compileDebugNavigationResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :core-metadata:extractDeepLinksDebug
+> Task :core-metadata:processDebugManifest
+> Task :data:extractDeepLinksDebug FROM-CACHE
+> Task :data:processDebugManifest
+> Task :domain:extractDeepLinksDebug FROM-CACHE
+> Task :domain:processDebugManifest
+> Task :i18n:processAndroidMainManifest
+> Task :presentation-core:extractDeepLinksDebug FROM-CACHE
+> Task :presentation-core:processDebugManifest
+> Task :presentation-widget:extractDeepLinksDebug FROM-CACHE
+> Task :presentation-widget:processDebugManifest
+> Task :source-api:extractDeepLinksDebug FROM-CACHE
+> Task :source-api:processDebugManifest
+> Task :source-local:extractDeepLinksDebug FROM-CACHE
+> Task :source-local:processDebugManifest
+> Task :telemetry:extractDeepLinksDebug FROM-CACHE
+> Task :telemetry:processDebugManifest
+> Task :core:archive:extractDeepLinksDebug FROM-CACHE
+> Task :core:archive:processDebugManifest
+> Task :core:common:extractDeepLinksDebug FROM-CACHE
+> Task :core:common:processDebugManifest
+> Task :core:metro:extractDeepLinksDebug FROM-CACHE
+> Task :core:metro:processDebugManifest
+> Task :icons:custom-material-symbols:extractDeepLinksDebug FROM-CACHE
+> Task :icons:custom-material-symbols:processDebugManifest
+> Task :icons:material-symbols:extractDeepLinksDebug FROM-CACHE
+> Task :icons:material-symbols:processDebugManifest
+> Task :icons:simple-icons:extractDeepLinksDebug FROM-CACHE
+> Task :icons:simple-icons:processDebugManifest
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :core-metadata:mapDebugSourceSetPaths
+> Task :core-metadata:compileDebugLibraryResources
+> Task :data:mapDebugSourceSetPaths
+> Task :data:compileDebugLibraryResources FROM-CACHE
+> Task :domain:mapDebugSourceSetPaths
+> Task :domain:compileDebugLibraryResources FROM-CACHE
+> Task :i18n:mapAndroidMainSourceSetPaths
+> Task :i18n:compileAndroidMainLibraryResources
+> Task :presentation-core:mapDebugSourceSetPaths
+> Task :presentation-core:compileDebugLibraryResources
+> Task :presentation-widget:mapDebugSourceSetPaths
+> Task :presentation-widget:compileDebugLibraryResources
+> Task :source-api:mapDebugSourceSetPaths
+> Task :source-api:compileDebugLibraryResources FROM-CACHE
+> Task :presentation-core:compileDebugKotlin
+> Task :source-local:mapDebugSourceSetPaths
+> Task :presentation-core:compileDebugJavaWithJavac NO-SOURCE
+> Task :presentation-core:compressDebugJavaRes
+> Task :presentation-core:bundleLibCompileToJarDebug
+> Task :source-local:compileDebugLibraryResources FROM-CACHE
+> Task :telemetry:mapDebugSourceSetPaths
+> Task :telemetry:compileDebugLibraryResources FROM-CACHE
+> Task :core:archive:mapDebugSourceSetPaths
+> Task :core:archive:compileDebugLibraryResources FROM-CACHE
+> Task :core:common:mapDebugSourceSetPaths
+> Task :core:common:compileDebugLibraryResources FROM-CACHE
+> Task :core:metro:mapDebugSourceSetPaths
+> Task :presentation-core:bundleLibRuntimeToDirDebug
+> Task :core:metro:compileDebugLibraryResources FROM-CACHE
+> Task :icons:custom-material-symbols:mapDebugSourceSetPaths
+> Task :icons:custom-material-symbols:compileDebugLibraryResources FROM-CACHE
+> Task :icons:material-symbols:mapDebugSourceSetPaths
+> Task :icons:material-symbols:compileDebugLibraryResources
+> Task :icons:simple-icons:mapDebugSourceSetPaths
+> Task :icons:simple-icons:compileDebugLibraryResources FROM-CACHE
+> Task :app:mergeDebugJniLibFolders
+> Task :domain:compileDebugKotlin
+> Task :domain:compileDebugJavaWithJavac NO-SOURCE
+> Task :core-metadata:mergeDebugJniLibFolders
+> Task :domain:compressDebugJavaRes
+> Task :domain:bundleLibCompileToJarDebug
+> Task :domain:bundleLibRuntimeToDirDebug
+> Task :presentation-widget:compileDebugKotlin
+> Task :presentation-widget:compileDebugJavaWithJavac NO-SOURCE
+> Task :presentation-widget:bundleLibCompileToJarDebug
+> Task :presentation-widget:compressDebugJavaRes
+> Task :presentation-widget:bundleLibRuntimeToDirDebug
+> Task :core-metadata:mergeDebugNativeLibs NO-SOURCE
+> Task :core-metadata:copyDebugJniLibsProjectOnly
+> Task :data:mergeDebugJniLibFolders
+> Task :data:mergeDebugNativeLibs NO-SOURCE
+> Task :data:copyDebugJniLibsProjectOnly
+> Task :domain:mergeDebugJniLibFolders
+> Task :domain:mergeDebugNativeLibs NO-SOURCE
+> Task :domain:copyDebugJniLibsProjectOnly
+> Task :i18n:mergeAndroidMainJniLibFolders
+> Task :i18n:mergeAndroidMainNativeLibs NO-SOURCE
+> Task :i18n:copyAndroidMainJniLibsProjectOnly
+> Task :presentation-core:mergeDebugJniLibFolders
+> Task :presentation-core:mergeDebugNativeLibs NO-SOURCE
+> Task :presentation-core:copyDebugJniLibsProjectOnly
+> Task :presentation-widget:mergeDebugJniLibFolders
+> Task :presentation-widget:mergeDebugNativeLibs NO-SOURCE
+> Task :presentation-widget:copyDebugJniLibsProjectOnly
+> Task :source-api:mergeDebugJniLibFolders
+> Task :source-api:mergeDebugNativeLibs NO-SOURCE
+> Task :source-api:copyDebugJniLibsProjectOnly
+> Task :source-local:mergeDebugJniLibFolders
+> Task :source-local:mergeDebugNativeLibs NO-SOURCE
+> Task :source-local:copyDebugJniLibsProjectOnly
+> Task :telemetry:mergeDebugJniLibFolders
+> Task :telemetry:mergeDebugNativeLibs NO-SOURCE
+> Task :telemetry:copyDebugJniLibsProjectOnly
+> Task :core:archive:mergeDebugJniLibFolders
+> Task :core:archive:mergeDebugNativeLibs NO-SOURCE
+> Task :core:archive:copyDebugJniLibsProjectOnly
+> Task :core:common:mergeDebugJniLibFolders
+> Task :core:common:mergeDebugNativeLibs NO-SOURCE
+> Task :core:common:copyDebugJniLibsProjectOnly
+> Task :core:metro:mergeDebugJniLibFolders
+> Task :core:metro:mergeDebugNativeLibs NO-SOURCE
+> Task :core:metro:copyDebugJniLibsProjectOnly
+> Task :icons:custom-material-symbols:mergeDebugJniLibFolders
+> Task :icons:custom-material-symbols:mergeDebugNativeLibs NO-SOURCE
+> Task :icons:custom-material-symbols:copyDebugJniLibsProjectOnly
+> Task :icons:material-symbols:mergeDebugJniLibFolders
+> Task :icons:material-symbols:mergeDebugNativeLibs NO-SOURCE
+> Task :icons:material-symbols:copyDebugJniLibsProjectOnly
+> Task :icons:simple-icons:mergeDebugJniLibFolders
+> Task :icons:simple-icons:mergeDebugNativeLibs NO-SOURCE
+> Task :icons:simple-icons:copyDebugJniLibsProjectOnly
+> Task :source-local:compileDebugKotlin
+> Task :source-local:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:mergeDebugNativeLibs
+> Task :source-local:bundleLibCompileToJarDebug
+> Task :source-local:compressDebugJavaRes
+> Task :source-local:bundleLibRuntimeToDirDebug
+> Task :app:processDebugResources
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:validateSigningDebug
+> Task :core-metadata:stripDebugDebugSymbols NO-SOURCE
+> Task :app:stripDebugDebugSymbols
+> Task :core-metadata:copyDebugJniLibsProjectAndLocalJars
+> Task :core-metadata:extractDeepLinksForAarDebug
+> Task :core-metadata:mergeDebugGeneratedProguardFiles
+> Task :core-metadata:checkDebugAarMetadata
+> Task :core-metadata:prepareDebugArtProfile
+> Task :core-metadata:mergeDebugConsumerProguardFiles
+> Task :core-metadata:prepareLintJarForPublish
+> Task :core-metadata:mergeDebugJavaResource
+> Task :data:stripDebugDebugSymbols NO-SOURCE
+> Task :data:copyDebugJniLibsProjectAndLocalJars
+> Task :data:checkDebugAarMetadata
+> Task :data:extractDeepLinksForAarDebug FROM-CACHE
+> Task :data:prepareDebugArtProfile
+> Task :data:prepareLintJarForPublish
+> Task :domain:checkDebugAarMetadata
+> Task :domain:stripDebugDebugSymbols NO-SOURCE
+> Task :domain:copyDebugJniLibsProjectAndLocalJars
+> Task :data:compileDebugKotlin
+> Task :data:compileDebugJavaWithJavac NO-SOURCE
+> Task :data:bundleLibCompileToJarDebug
+> Task :core-metadata:extractDebugAnnotations
+> Task :data:extractDebugAnnotations
+> Task :data:compressDebugJavaRes
+> Task :domain:extractDebugAnnotations
+> Task :data:mergeDebugGeneratedProguardFiles
+> Task :data:mergeDebugConsumerProguardFiles
+> Task :data:mergeDebugJavaResource
+> Task :core-metadata:syncDebugLibJars
+> Task :data:syncDebugLibJars
+> Task :data:bundleLibRuntimeToDirDebug
+> Task :core-metadata:bundleDebugAar
+> Task :core-metadata:assembleDebug
+> Task :domain:extractDeepLinksForAarDebug FROM-CACHE
+> Task :domain:mergeDebugGeneratedProguardFiles
+> Task :domain:mergeDebugConsumerProguardFiles
+> Task :domain:prepareDebugArtProfile
+> Task :domain:prepareLintJarForPublish
+> Task :data:bundleDebugAar
+> Task :data:assembleDebug
+> Task :domain:mergeDebugJavaResource
+> Task :domain:syncDebugLibJars
+> Task :domain:bundleDebugAar
+> Task :domain:assembleDebug
+> Task :presentation-core:stripDebugDebugSymbols NO-SOURCE
+> Task :presentation-core:copyDebugJniLibsProjectAndLocalJars
+> Task :presentation-core:checkDebugAarMetadata
+> Task :presentation-core:extractDeepLinksForAarDebug FROM-CACHE
+> Task :presentation-core:mergeDebugGeneratedProguardFiles
+> Task :presentation-core:mergeDebugConsumerProguardFiles
+> Task :presentation-core:prepareDebugArtProfile
+> Task :presentation-core:prepareLintJarForPublish
+> Task :presentation-core:mergeDebugJavaResource
+> Task :presentation-core:extractDebugAnnotations
+> Task :presentation-core:syncDebugLibJars
+> Task :presentation-core:bundleDebugAar
+> Task :presentation-core:assembleDebug
+> Task :presentation-widget:stripDebugDebugSymbols NO-SOURCE
+> Task :presentation-widget:copyDebugJniLibsProjectAndLocalJars
+> Task :presentation-widget:checkDebugAarMetadata
+> Task :presentation-widget:extractDeepLinksForAarDebug FROM-CACHE
+> Task :presentation-widget:mergeDebugGeneratedProguardFiles
+> Task :presentation-widget:mergeDebugConsumerProguardFiles
+> Task :presentation-widget:prepareDebugArtProfile
+> Task :presentation-widget:prepareLintJarForPublish
+> Task :presentation-widget:mergeDebugJavaResource
+> Task :source-api:checkDebugAarMetadata
+> Task :source-api:stripDebugDebugSymbols NO-SOURCE
+> Task :source-api:copyDebugJniLibsProjectAndLocalJars
+> Task :source-api:extractDebugAnnotations
+> Task :source-api:extractDeepLinksForAarDebug FROM-CACHE
+> Task :source-api:mergeDebugGeneratedProguardFiles
+> Task :source-api:mergeDebugConsumerProguardFiles
+> Task :source-api:prepareDebugArtProfile
+> Task :source-api:prepareLintJarForPublish
+> Task :source-api:mergeDebugJavaResource
+> Task :presentation-widget:extractDebugAnnotations
+> Task :presentation-widget:syncDebugLibJars
+> Task :source-api:syncDebugLibJars
+> Task :source-api:bundleDebugAar
+> Task :source-api:assembleDebug
+> Task :source-local:checkDebugAarMetadata
+> Task :source-local:stripDebugDebugSymbols NO-SOURCE
+> Task :source-local:copyDebugJniLibsProjectAndLocalJars
+> Task :presentation-widget:bundleDebugAar
+> Task :presentation-widget:assembleDebug
+> Task :source-local:extractDeepLinksForAarDebug FROM-CACHE
+> Task :source-local:extractDebugAnnotations
+> Task :source-local:prepareDebugArtProfile
+> Task :source-local:mergeDebugGeneratedProguardFiles
+> Task :source-local:prepareLintJarForPublish
+> Task :source-local:mergeDebugConsumerProguardFiles
+> Task :source-local:mergeDebugJavaResource
+> Task :telemetry:checkDebugAarMetadata
+> Task :telemetry:stripDebugDebugSymbols NO-SOURCE
+> Task :telemetry:copyDebugJniLibsProjectAndLocalJars
+> Task :source-local:syncDebugLibJars
+> Task :source-local:bundleDebugAar
+> Task :source-local:assembleDebug
+> Task :telemetry:extractDebugAnnotations
+> Task :telemetry:extractDeepLinksForAarDebug FROM-CACHE
+> Task :telemetry:prepareDebugArtProfile
+> Task :telemetry:mergeDebugGeneratedProguardFiles
+> Task :telemetry:prepareLintJarForPublish
+> Task :telemetry:mergeDebugConsumerProguardFiles
+> Task :telemetry:mergeDebugJavaResource
+> Task :core:archive:checkDebugAarMetadata
+> Task :core:archive:stripDebugDebugSymbols NO-SOURCE
+> Task :core:archive:copyDebugJniLibsProjectAndLocalJars
+> Task :telemetry:syncDebugLibJars
+> Task :telemetry:bundleDebugAar
+> Task :telemetry:assembleDebug
+> Task :core:archive:extractDebugAnnotations
+> Task :core:archive:mergeDebugGeneratedProguardFiles
+> Task :core:archive:extractDeepLinksForAarDebug FROM-CACHE
+> Task :core:archive:mergeDebugConsumerProguardFiles
+> Task :core:archive:prepareDebugArtProfile
+> Task :core:archive:prepareLintJarForPublish
+> Task :core:archive:mergeDebugJavaResource
+> Task :core:archive:syncDebugLibJars
+> Task :core:common:checkDebugAarMetadata
+> Task :core:common:stripDebugDebugSymbols NO-SOURCE
+> Task :core:archive:bundleDebugAar
+> Task :core:archive:assembleDebug
+> Task :core:common:copyDebugJniLibsProjectAndLocalJars
+> Task :core:common:extractDeepLinksForAarDebug FROM-CACHE
+> Task :core:common:mergeDebugGeneratedProguardFiles
+> Task :core:common:mergeDebugConsumerProguardFiles
+> Task :core:common:prepareDebugArtProfile
+> Task :core:common:prepareLintJarForPublish
+> Task :core:common:mergeDebugJavaResource
+> Task :core:common:extractDebugAnnotations
+> Task :core:metro:checkDebugAarMetadata
+> Task :core:metro:stripDebugDebugSymbols NO-SOURCE
+> Task :core:metro:copyDebugJniLibsProjectAndLocalJars
+> Task :core:metro:extractDebugAnnotations
+> Task :core:metro:extractDeepLinksForAarDebug FROM-CACHE
+> Task :core:metro:mergeDebugGeneratedProguardFiles
+> Task :core:metro:mergeDebugConsumerProguardFiles
+> Task :core:metro:prepareDebugArtProfile
+> Task :core:metro:prepareLintJarForPublish
+> Task :core:metro:mergeDebugJavaResource
+> Task :core:common:syncDebugLibJars
+> Task :core:metro:syncDebugLibJars
+> Task :core:metro:bundleDebugAar
+> Task :core:metro:assembleDebug
+> Task :core:common:bundleDebugAar
+> Task :core:common:assembleDebug
+> Task :icons:custom-material-symbols:stripDebugDebugSymbols NO-SOURCE
+> Task :icons:custom-material-symbols:copyDebugJniLibsProjectAndLocalJars
+> Task :icons:custom-material-symbols:extractDebugAnnotations
+> Task :icons:custom-material-symbols:extractDeepLinksForAarDebug FROM-CACHE
+> Task :icons:custom-material-symbols:mergeDebugGeneratedProguardFiles
+> Task :icons:custom-material-symbols:mergeDebugConsumerProguardFiles
+> Task :icons:custom-material-symbols:prepareDebugArtProfile
+> Task :icons:custom-material-symbols:checkDebugAarMetadata
+> Task :icons:custom-material-symbols:prepareLintJarForPublish
+> Task :icons:custom-material-symbols:mergeDebugJavaResource
+> Task :icons:material-symbols:checkDebugAarMetadata
+> Task :icons:material-symbols:stripDebugDebugSymbols NO-SOURCE
+> Task :icons:custom-material-symbols:syncDebugLibJars
+> Task :icons:material-symbols:copyDebugJniLibsProjectAndLocalJars
+> Task :icons:custom-material-symbols:bundleDebugAar
+> Task :icons:custom-material-symbols:assembleDebug
+> Task :icons:material-symbols:extractDebugAnnotations
+> Task :icons:material-symbols:extractDeepLinksForAarDebug FROM-CACHE
+> Task :icons:material-symbols:mergeDebugGeneratedProguardFiles
+> Task :icons:material-symbols:mergeDebugConsumerProguardFiles
+> Task :icons:material-symbols:prepareDebugArtProfile
+> Task :icons:material-symbols:prepareLintJarForPublish
+> Task :icons:material-symbols:mergeDebugJavaResource
+> Task :icons:simple-icons:checkDebugAarMetadata
+> Task :icons:simple-icons:stripDebugDebugSymbols NO-SOURCE
+> Task :icons:simple-icons:copyDebugJniLibsProjectAndLocalJars
+> Task :icons:simple-icons:extractDebugAnnotations
+> Task :icons:simple-icons:extractDeepLinksForAarDebug FROM-CACHE
+> Task :icons:simple-icons:mergeDebugGeneratedProguardFiles
+> Task :icons:simple-icons:mergeDebugConsumerProguardFiles
+> Task :icons:simple-icons:prepareDebugArtProfile
+> Task :icons:simple-icons:prepareLintJarForPublish
+> Task :icons:simple-icons:mergeDebugJavaResource
+> Task :icons:simple-icons:syncDebugLibJars
+> Task :icons:simple-icons:bundleDebugAar
+> Task :icons:simple-icons:assembleDebug
+> Task :icons:material-symbols:syncDebugLibJars
+> Task :icons:material-symbols:bundleDebugAar
+> Task :icons:material-symbols:assembleDebug
+> Task :app:mergeLibDexDebug
+> Task :app:compileDebugKotlin
+w: file:///home/runner/work/mihon/mihon/app/src/main/java/eu/kanade/presentation/manga/components/MangaNotesDisplay.kt:51:9 This Rich Text API is experimental and is likely to change or to be removed in the future.
+w: file:///home/runner/work/mihon/mihon/app/src/main/java/eu/kanade/tachiyomi/data/translation/PageTranslator.kt:71:37 'static fun newInstance(p0: FileDescriptor, p1: Boolean): BitmapRegionDecoder' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/mihon/mihon/app/src/main/java/eu/kanade/tachiyomi/data/translation/PageTranslator.kt:72:21 Elvis operator (?:) always returns the left operand of non-nullable type 'BitmapRegionDecoder'.
+w: file:///home/runner/work/mihon/mihon/app/src/main/java/eu/kanade/tachiyomi/ui/reader/model/DownloadStream.kt:11:24 This class is not recommended for use in Kotlin. Use 'kotlin.Any' instead.
+w: file:///home/runner/work/mihon/mihon/app/src/main/java/eu/kanade/tachiyomi/ui/reader/viewer/webgpu/WebGpuViewer.kt:130:24 This class is not recommended for use in Kotlin. Use 'kotlin.Any' instead.
+
+> Task :app:compressDebugJavaRes
+> Task :app:mergeDebugJavaResource
+> Task :app:compileDebugJavaWithJavac
+> Task :app:dexBuilderDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:assembleDebug
+> Task :app:createDebugApkListingFileRedirect
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/build-1794618153222.json
+
+[Incubating] Problems report is available at: file:///home/runner/work/mihon/mihon/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.9.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 5m 28s
+488 actionable tasks: 405 executed, 79 from cache, 4 up-to-date
+Configuration cache entry stored.
