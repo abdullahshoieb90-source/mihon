@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.data.translation
 import android.util.Base64
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -269,22 +270,54 @@ class AiTranslationService(
     ): List<LearnedPair> {
         val withKeys = VISION_BACKENDS.filter { apiKey(it).isNotBlank() }
         val preferred = runCatching { backendFor(preferences.provider.get()) }.getOrNull()
-        val backend = withKeys.firstOrNull { it == preferred } ?: withKeys.firstOrNull()
-            ?: throw TranslationException(TranslationError.MISSING_API_KEY)
-        val key = apiKey(backend)
-        val model = model(backend)
+        val backends = withKeys.sortedByDescending { it == preferred }
+        if (backends.isEmpty()) throw TranslationException(TranslationError.MISSING_API_KEY)
 
-        val instruction = "The first image is a comic page in its original language. The second image is the same page " +
-            "translated by a human. Read both and answer with only a JSON array. Each entry is an object with " +
-            "\"original\" (the text of one speech bubble in the first image) and \"arabic\" (the same bubble in the " +
-            "second image). Skip sound effects and anything drawn over the art. Keep the original wording exactly."
-
-        val request = when (backend) {
-            AiBackend.GEMINI -> geminiVisionRequest(key, model, instruction, rawImage, translatedImage)
-            AiBackend.OPENAI -> openAiVisionRequest(key, model, instruction, rawImage, translatedImage)
-            AiBackend.CLAUDE -> claudeVisionRequest(key, model, instruction, rawImage, translatedImage)
+        var failure: TranslationException? = null
+        for (backend in backends) {
+            val key = apiKey(backend)
+            for (model in visionModels(backend)) {
+                for (attempt in 0 until VISION_ATTEMPTS) {
+                    if (attempt > 0) delay(VISION_RETRY_DELAY_MILLIS * attempt)
+                    val result = runCatching { requestPageReading(backend, key, model, rawImage, translatedImage) }
+                    result.getOrNull()?.let { return it }
+                    val error = result.exceptionOrNull()
+                    failure = error as? TranslationException
+                        ?: TranslationException(TranslationError.PROVIDER_ERROR, error?.message)
+                    // A rejected key won't fix itself by asking again.
+                    if (failure?.error != TranslationError.PROVIDER_ERROR) throw failure!!
+                    // An overloaded model is worth retrying; anything else moves on to the next model.
+                    if (!isTemporary(failure?.detail)) break
+                }
+            }
         }
+        throw failure ?: TranslationException(TranslationError.PROVIDER_ERROR, "No AI service answered")
+    }
 
+    /** Models get overloaded one at a time, so a second one is worth a try before giving up. */
+    private fun visionModels(backend: AiBackend): List<String> = when (backend) {
+        AiBackend.GEMINI -> listOf(model(backend), *GEMINI_FALLBACK_MODELS.toTypedArray()).distinct()
+        AiBackend.OPENAI -> listOf(model(backend))
+        AiBackend.CLAUDE -> listOf(model(backend))
+    }
+
+    private fun isTemporary(detail: String?): Boolean {
+        val text = detail?.lowercase().orEmpty()
+        return TEMPORARY_MARKERS.any { it in text }
+    }
+
+    private suspend fun requestPageReading(
+        backend: AiBackend,
+        key: String,
+        model: String,
+        rawImage: ByteArray,
+        translatedImage: ByteArray,
+    ): List<LearnedPair> {
+        val request = when (backend) {
+            AiBackend.GEMINI -> geminiVisionRequest(key, model, PAGE_READING_INSTRUCTION, rawImage, translatedImage)
+            AiBackend.OPENAI -> openAiVisionRequest(key, model, PAGE_READING_INSTRUCTION, rawImage, translatedImage)
+            AiBackend.CLAUDE -> claudeVisionRequest(key, model, PAGE_READING_INSTRUCTION, rawImage, translatedImage)
+        }
         val body = networkHelper.client.executeForBody(request)
         val answer = when (backend) {
             AiBackend.GEMINI -> body.jsonPath("candidates", 0, "content", "parts", 0, "text")
@@ -464,6 +497,30 @@ class AiTranslationService(
 
     companion object {
         private val VISION_BACKENDS = listOf(AiBackend.GEMINI, AiBackend.OPENAI, AiBackend.CLAUDE)
+
+        private const val PAGE_READING_INSTRUCTION =
+            "The first image is a comic page in its original language. The second image is the same page translated " +
+                "by a human. Read both and answer with only a JSON array. Each entry is an object with \"original\" " +
+                "(the text of one speech bubble in the first image) and \"arabic\" (the same bubble in the second " +
+                "image). Skip sound effects and anything drawn over the art. Keep the original wording exactly."
+
+        private const val VISION_ATTEMPTS = 2
+        private const val VISION_RETRY_DELAY_MILLIS = 2500L
+
+        private val GEMINI_FALLBACK_MODELS = listOf("gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest")
+
+        private val TEMPORARY_MARKERS = listOf(
+            "high demand",
+            "overloaded",
+            "unavailable",
+            "rate limit",
+            "resource_exhausted",
+            "try again",
+            "timeout",
+            "429",
+            "500",
+            "503",
+        )
 
         private const val OPENAI_ENDPOINT = "https://api.openai.com/v1"
         private const val GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta"

@@ -22,6 +22,7 @@ import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.domain.translation.model.TranslationError
 import tachiyomi.domain.translation.service.TranslationPreferences
 import tachiyomi.i18n.MR
 import java.io.ByteArrayOutputStream
@@ -57,6 +58,14 @@ class TranslationMemoryLearner(
 
     private val mutableState = MutableStateFlow<TranslationLearningState>(TranslationLearningState.Idle)
     val state: StateFlow<TranslationLearningState> = mutableState.asStateFlow()
+
+    /** Providers answer in English with machine codes; the reader gets a sentence instead. */
+    private fun friendly(e: TranslationException): String = when {
+        e.error == TranslationError.MISSING_API_KEY -> context.stringResource(MR.strings.translation_learn_no_key)
+        BUSY_MARKERS.any { marker -> e.message.orEmpty().lowercase().contains(marker) } ->
+            context.stringResource(MR.strings.translation_learn_busy)
+        else -> context.stringResource(MR.strings.translation_learn_failed, e.message.orEmpty())
+    }
 
     private fun unknown(): String = context.stringResource(MR.strings.translation_learn_failed, "")
 
@@ -120,7 +129,7 @@ class TranslationMemoryLearner(
             mutableState.value = TranslationLearningState.Idle
             throw e
         } catch (e: TranslationException) {
-            fail(e.message ?: unknown())
+            fail(friendly(e))
         } catch (e: Exception) {
             fail(e.message ?: unknown())
         }
@@ -147,11 +156,13 @@ class TranslationMemoryLearner(
         for (index in 0 until count) {
             val original = fetch(rawSource, rawPages[index]) ?: continue
             val translation = fetch(translatedSource, translatedPages[index]) ?: continue
-            pairs += runCatching { reader.readTranslatedPage(original, translation) }
-                .getOrElse { error ->
-                    // A key that isn't accepted stops the whole run; a single unreadable page doesn't.
-                    if (error is TranslationException) throw error else emptyList()
-                }
+            try {
+                pairs += reader.readTranslatedPage(original, translation)
+            } catch (e: TranslationException) {
+                // A rejected key stops the run; a page the service couldn't read keeps what was learned so far.
+                if (e.error == TranslationError.MISSING_API_KEY) throw e
+                break
+            }
         }
         return pairs
     }
@@ -202,6 +213,8 @@ class TranslationMemoryLearner(
     }
 
     companion object {
+        private val BUSY_MARKERS = listOf("high demand", "overloaded", "unavailable", "try again", "rate limit", "503")
+
         private const val MAX_WIDTH = 1100
         private const val JPEG_QUALITY = 80
         private const val MAX_PAGES_PER_CHAPTER = 80
