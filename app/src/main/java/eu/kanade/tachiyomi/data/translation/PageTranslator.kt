@@ -25,6 +25,8 @@ data class TranslatedTextBlock(
     val box: Rect,
     val original: String,
     val translated: String,
+    /** How many lines of the original lettering the box held, which is how its font size is estimated. */
+    val lines: Int = 1,
 )
 
 /**
@@ -91,9 +93,11 @@ class PageTranslator(
                 // Dots of an ellipsis, page numbers and sound effects are recognized as "0000" or "…" all the
                 // time; translating those only paints boxes over the art.
                 val recognition = recognize(decoder, nativeWidth, nativeHeight, source)
-                val blocks = recognition.blocks
-                    .filter { it.text.count { char -> char.isLetter() } >= MIN_LETTERS }
-                    .filterNot { it.text.isSoundEffect() }
+                val blocks = mergeBubbles(
+                    recognition.blocks
+                        .filter { it.text.count { char -> char.isLetter() } >= MIN_LETTERS }
+                        .filterNot { it.text.isSoundEffect() },
+                )
                 if (blocks.isEmpty()) throw TranslationException(TranslationError.NO_TEXT_FOUND)
 
                 // Text positions are read at the OCR scale and have to be drawn on the displayed bitmap.
@@ -128,6 +132,7 @@ class PageTranslator(
                             box = block.box.scaled(ratio),
                             original = cleaned[index],
                             translated = translated,
+                            lines = block.lines,
                         )
                     }
                 }
@@ -187,6 +192,67 @@ class PageTranslator(
             inScaled = false
         }
         return BitmapFactory.decodeFile(file.absolutePath, options)
+    }
+
+    /**
+     * A speech bubble is recognized line by line, and translating every line on its own produced half-covered bubbles
+     * and sentences without their beginning. Neighbouring lines of the same bubble are joined into one block, which
+     * the translator then sees as a whole and which is painted over as a whole.
+     */
+    private fun mergeBubbles(blocks: List<OcrBlock>): List<Bubble> {
+        if (blocks.size < 2) return blocks.map { Bubble(it.text, it.box, 1) }
+
+        val parent = IntArray(blocks.size) { it }
+        fun find(index: Int): Int {
+            var current = index
+            while (parent[current] != current) {
+                parent[current] = parent[parent[current]]
+                current = parent[current]
+            }
+            return current
+        }
+
+        for (first in blocks.indices) {
+            for (second in first + 1 until blocks.size) {
+                if (belongTogether(blocks[first].box, blocks[second].box)) {
+                    val a = find(first)
+                    val b = find(second)
+                    if (a != b) parent[b] = a
+                }
+            }
+        }
+
+        return blocks.indices
+            .groupBy { find(it) }
+            .values
+            .map { indices ->
+                val parts = indices.map { blocks[it] }.sortedWith(compareBy({ it.box.top }, { it.box.left }))
+                val box = Rect(parts.first().box)
+                parts.drop(1).forEach { box.union(it.box) }
+                Bubble(
+                    text = parts.joinToString(separator = " ") { it.text.trim() },
+                    box = box,
+                    lines = parts.size,
+                )
+            }
+    }
+
+    /** One speech bubble's lettering: its lines joined into a sentence, and the area they cover. */
+    private data class Bubble(
+        val text: String,
+        val box: Rect,
+        val lines: Int,
+    )
+
+    /** Two lines belong to the same bubble when they overlap sideways and sit close to each other. */
+    private fun belongTogether(a: Rect, b: Rect): Boolean {
+        val horizontalOverlap = min(a.right, b.right) - max(a.left, b.left)
+        val narrower = min(a.width(), b.width()).coerceAtLeast(1)
+        if (horizontalOverlap.toFloat() / narrower < 0.25f) return false
+
+        val gap = max(a.top, b.top) - min(a.bottom, b.bottom)
+        val lineHeight = min(a.height(), b.height()).coerceAtLeast(1)
+        return gap <= lineHeight * 0.6f
     }
 
     private suspend fun recognize(
@@ -438,7 +504,10 @@ class PageTranslator(
         val letters = filter { it.isLetter() }
         if (letters.length !in 3..6) return false
         if (letters.any { it.code > 0x2FF }) return false
-        // "HAA…", "NO", "AH" are moans and shouts from the dialogue, not lettering drawn over the art.
+        // Lettering drawn over the art has no punctuation; "WHAT?" and "NO!" are short lines of dialogue that a
+        // reader still needs translated.
+        if (any { it in "?!.,…،؟" }) return false
+        // "HAA…", "NO", "AH" are moans and shouts from the dialogue, not drawing.
         if (letters.lowercase() in DIALOGUE_SHOUTS) return false
         return letters.all { it.isUpperCase() }
     }

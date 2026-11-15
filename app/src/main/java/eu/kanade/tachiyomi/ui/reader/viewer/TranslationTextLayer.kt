@@ -85,10 +85,13 @@ class TranslationTextLayer(context: Context) : View(context) {
         if (placed.isEmpty()) return
 
         // One letter size for the whole page: sizing every bubble on its own made neighbouring bubbles look like
-        // different readers had pasted them in.
-        val heights = placed.map { it.second.height() }.sorted()
-        val reference = heights[(heights.size - 1) * 3 / 5]
-        val baseTextSize = (reference / TEXT_HEIGHT_DIVISOR)
+        // different readers had pasted them in. The size comes from a line of the original lettering, so the
+        // translation sits at the weight of the page instead of shrinking into unreadable small print.
+        val lineHeights = placed
+            .map { (block, box) -> box.height() / block.lines.coerceAtLeast(1) }
+            .sorted()
+        val reference = lineHeights[(lineHeights.size - 1) * 3 / 5]
+        val baseTextSize = (reference * LINE_TO_TEXT_RATIO)
             .coerceIn(MIN_TEXT_SIZE_DP * density, MAX_TEXT_SIZE_DP * density)
 
         placed.forEach { (block, box) ->
@@ -238,9 +241,9 @@ class TranslationTextLayer(context: Context) : View(context) {
     companion object {
         private const val MIN_TEXT_SIZE_DP = 6f
         private const val MAX_TEXT_SIZE_DP = 28f
-        private const val TEXT_HEIGHT_DIVISOR = 3.2f
-        private const val MAX_GROWTH = 1.25f
-        private const val MAX_WIDTH_GROWTH = 1.06f
+        private const val LINE_TO_TEXT_RATIO = 0.72f
+        private const val MAX_GROWTH = 1.5f
+        private const val MAX_WIDTH_GROWTH = 1.12f
         private const val LUMA_THRESHOLD = 128.0
     }
 }
