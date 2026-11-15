@@ -244,15 +244,25 @@ class PageTranslator(
         val lines: Int,
     )
 
-    /** Two lines belong to the same bubble when they overlap sideways and sit close to each other. */
+    /**
+     * Two pieces of lettering belong to the same bubble when they stack on top of each other with a small gap, or sit
+     * side by side on the same line. A bubble that holds two sentences ("A-ANYWAY!" above a longer line) has to be
+     * read as one, otherwise one half stays in the original language.
+     */
     private fun belongTogether(a: Rect, b: Rect): Boolean {
         val horizontalOverlap = min(a.right, b.right) - max(a.left, b.left)
         val narrower = min(a.width(), b.width()).coerceAtLeast(1)
-        if (horizontalOverlap.toFloat() / narrower < 0.25f) return false
+        val overlapRatio = horizontalOverlap.toFloat() / narrower
 
-        val gap = max(a.top, b.top) - min(a.bottom, b.bottom)
+        val verticalGap = max(a.top, b.top) - min(a.bottom, b.bottom)
         val lineHeight = min(a.height(), b.height()).coerceAtLeast(1)
-        return gap <= lineHeight * 0.6f
+
+        // Stacked: the lines of one bubble, even when a wide line follows a short one.
+        if (verticalGap <= lineHeight * SAME_BUBBLE_GAP && overlapRatio >= 0.12f) return true
+
+        // Side by side on the same line: one sentence split by the recognizer.
+        val horizontalGap = max(a.left, b.left) - min(a.right, b.right)
+        return horizontalGap <= lineHeight * SAME_BUBBLE_GAP && max(a.top, b.top) - min(a.bottom, b.bottom) <= 0
     }
 
     private suspend fun recognize(
@@ -553,6 +563,9 @@ class PageTranslator(
         /** A block with this little text inside a box three times the median is a failed reading. */
         private const val SPARSE_TEXT_LENGTH = 12
         private const val MAX_ENRICHED_BLOCKS = 3
+
+        /** How many line heights apart two lines may sit and still count as one bubble. */
+        private const val SAME_BUBBLE_GAP = 1.2f
         private const val DETECTION_SLICE_HEIGHT = 900
         private const val DETECTION_WIDTH = 720
     }

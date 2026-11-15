@@ -963,6 +963,8 @@
     <string name="translation_learn_no_shared">لا توجد فصول تحمل الرقم نفسه في النسختين.</string>
     <string name="translation_learn_no_manga">لم يتم العثور على العمل.</string>
     <string name="translation_learn_busy">خدمة الذكاء الاصطناعي مشغولة الآن (ضغط عالٍ). أعد المحاولة بعد دقيقة.</string>
+    <string name="pref_translation_text_scale">حجم الترجمة</string>
+    <string name="pref_translation_text_scale_summary">١٠٠٪ يطابق خط الأصل؛ ارفعه إن ظهرت الترجمة صغيرة.</string>
     <string name="pref_category_translation_ocr">قراءة الصور</string>
     <string name="pref_translation_ocr_quality">جودة القراءة</string>
     <string name="pref_translation_ocr_quality_summary">«سريع» يقرأ الخطوط العريضة فقط، و«دقيق» يقرأ كل سطر. الصفحات البطيئة تُقرأ بتفصيل أقل.</string>

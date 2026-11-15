@@ -102,6 +102,12 @@ class TranslationPreferences(
     )
 
     /** 1 = fast, 2 = balanced, 3 = accurate: how much of the page the recognizer is allowed to read. */
+    /** Multiplier over the size taken from the original lettering: 100 = match the page, 130 = a third larger. */
+    val textScale: Preference<Int> = preferenceStore.getInt(
+        "pref_translation_text_scale",
+        100,
+    )
+
     val ocrQuality: Preference<Int> = preferenceStore.getInt(
         "pref_translation_ocr_quality",
         2,

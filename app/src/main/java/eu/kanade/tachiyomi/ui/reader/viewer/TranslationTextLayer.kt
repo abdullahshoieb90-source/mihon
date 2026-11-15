@@ -91,7 +91,8 @@ class TranslationTextLayer(context: Context) : View(context) {
             .map { (block, box) -> box.height() / block.lines.coerceAtLeast(1) }
             .sorted()
         val reference = lineHeights[(lineHeights.size - 1) * 3 / 5]
-        val baseTextSize = (reference * LINE_TO_TEXT_RATIO)
+        val scale = preferences.textScale.get() / 100f
+        val baseTextSize = (reference * LINE_TO_TEXT_RATIO * scale)
             .coerceIn(MIN_TEXT_SIZE_DP * density, MAX_TEXT_SIZE_DP * density)
 
         placed.forEach { (block, box) ->
@@ -239,7 +240,7 @@ class TranslationTextLayer(context: Context) : View(context) {
     }
 
     companion object {
-        private const val MIN_TEXT_SIZE_DP = 6f
+        private const val MIN_TEXT_SIZE_DP = 9f
         private const val MAX_TEXT_SIZE_DP = 28f
         private const val LINE_TO_TEXT_RATIO = 0.72f
         private const val MAX_GROWTH = 1.5f

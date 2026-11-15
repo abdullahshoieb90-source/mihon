@@ -66,6 +66,13 @@ object SettingsTranslationScreen : SearchableSettings {
                         ),
                         title = stringResource(MR.strings.pref_translation_text_color),
                     ),
+                    Preference.PreferenceItem.SliderPreference(
+                        preference = preferences.textScale,
+                        valueRange = 80..180,
+                        valueText = { scale -> "$scale%" },
+                        title = stringResource(MR.strings.pref_translation_text_scale),
+                        subtitle = stringResource(MR.strings.pref_translation_text_scale_summary),
+                    ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = preferences.boldText,
                         title = stringResource(MR.strings.pref_translation_bold),
