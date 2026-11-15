@@ -80,7 +80,7 @@ class TranslationPreferences(
         "claude-3-5-haiku-latest",
     )
 
-    /** Keeps the adult tone of mature pages instead of softening it. */
+    // Keeps the adult tone of mature pages instead of softening it.
     val explicitContent: Preference<Boolean> = preferenceStore.getBoolean(
         "pref_translation_explicit_content",
         false,
@@ -101,8 +101,8 @@ class TranslationPreferences(
         TranslationLetterCase.ORIGINAL,
     )
 
-    /** 1 = fast, 2 = balanced, 3 = accurate: how much of the page the recognizer is allowed to read. */
-    /** Multiplier over the size taken from the original lettering: 100 = match the page, 130 = a third larger. */
+    // 1 = fast, 2 = balanced, 3 = accurate: how much of the page the recognizer is allowed to read.
+    // Multiplier over the size taken from the original lettering: 100 = match the page, 130 = a third larger.
     val textScale: Preference<Int> = preferenceStore.getInt(
         "pref_translation_text_scale",
         100,
