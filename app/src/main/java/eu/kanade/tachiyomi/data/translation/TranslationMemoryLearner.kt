@@ -22,7 +22,6 @@ import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.source.service.SourceManager
-import tachiyomi.domain.translation.model.TranslationError
 import tachiyomi.domain.translation.service.TranslationPreferences
 import tachiyomi.i18n.MR
 import java.io.ByteArrayOutputStream
