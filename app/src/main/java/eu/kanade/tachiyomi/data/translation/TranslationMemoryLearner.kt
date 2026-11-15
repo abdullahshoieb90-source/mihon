@@ -2,7 +2,6 @@ package eu.kanade.tachiyomi.data.translation
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.content.Context
 import android.graphics.BitmapFactory
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
@@ -96,7 +95,11 @@ class TranslationMemoryLearner(
                 raw = getChaptersByMangaId.await(rawMangaId).readable(),
                 translated = getChaptersByMangaId.await(translatedMangaId).readable(),
             )
-            if (chapters.isEmpty()) return@withContext fail(context.stringResource(MR.strings.translation_learn_no_shared))
+            if (chapters.isEmpty()) {
+                return@withContext fail(
+                    context.stringResource(MR.strings.translation_learn_no_shared),
+                )
+            }
 
             var learned = 0
             var done = 0
