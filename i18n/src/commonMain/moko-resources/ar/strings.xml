@@ -950,6 +950,14 @@
     <string name="translation_case_lower">abc</string>
     <string name="pref_translation_explicit">حوار صريح (18+)</string>
     <string name="pref_translation_explicit_summary">يحافظ على الألفاظ الصريحة دون تلطيف أو حذف. يعمل مع خدمات الذكاء الاصطناعي.</string>
+    <string name="translation_learn">تعلّم من نسخة مترجمة</string>
+    <string name="translation_learn_summary">يقرأ نسخة مترجمة من نفس العمل بجانب الأصل، فيعيد استخدام الأسماء والصياغة التي اختارتها.</string>
+    <string name="translation_learn_pick">اختر النسخة المترجمة</string>
+    <string name="translation_learn_empty">لا توجد نسخة أخرى في مكتبتك. أضِف النسخة المترجمة إلى المكتبة أولًا.</string>
+    <string name="translation_learn_running">جارٍ قراءة الفصل %1$d من %2$d… تعلّم %3$d سطرًا</string>
+    <string name="translation_learn_done">تعلّم %1$d سطرًا من %2$d فصلًا. الترجمة القادمة لهذا العمل ستستخدمها.</string>
+    <string name="translation_learn_failed">فشل التعلّم: %s</string>
+    <string name="translation_learn_cancel">إلغاء</string>
     <string name="pref_category_translation_ocr">قراءة الصور</string>
     <string name="pref_translation_ocr_quality">جودة القراءة</string>
     <string name="pref_translation_ocr_quality_summary">«سريع» يقرأ الخطوط العريضة فقط، و«دقيق» يقرأ كل سطر. الصفحات البطيئة تُقرأ بتفصيل أقل.</string>

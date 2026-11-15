@@ -35,6 +35,7 @@ class Translator(
         texts: List<String>,
         source: TranslationLanguage,
         target: TranslationLanguage,
+        hints: List<LearnedPair> = emptyList(),
     ): List<String> {
         if (texts.isEmpty()) return emptyList()
         if (target == TranslationLanguage.AUTO) {
@@ -51,6 +52,14 @@ class Translator(
             -> ai
             TranslationProvider.ON_DEVICE -> onDevice
         }
-        return service.translate(texts, source, target)
+        // Only the chat models can be told about the reference wording; the others already got the names swapped
+        // into the source text, which they leave alone.
+        return when (preferences.provider.get()) {
+            TranslationProvider.OPENAI,
+            TranslationProvider.GEMINI,
+            TranslationProvider.CLAUDE,
+            -> ai.translate(texts, source, target, hints)
+            else -> service.translate(texts, source, target)
+        }
     }
 }

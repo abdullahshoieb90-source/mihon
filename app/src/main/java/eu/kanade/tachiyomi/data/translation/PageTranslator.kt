@@ -51,11 +51,13 @@ class PageTranslator(
     private val translator: Translator,
     private val ocrEngine: OcrEngine,
     private val preferences: TranslationPreferences,
+    private val memory: TranslationMemoryStore,
 ) {
 
     suspend fun translate(
         pageIndex: Int,
         openStream: (() -> InputStream)?,
+        mangaId: Long? = null,
     ): TranslatedPage = withContext(Dispatchers.IO) {
         val open = openStream ?: throw TranslationException(TranslationError.PAGE_NOT_AVAILABLE)
         val source = translator.sourceLanguage
@@ -108,7 +110,14 @@ class PageTranslator(
                 } else {
                     source
                 }
-                val translation = translateAll(cleaned, effectiveSource, target)
+                // What a translated copy of this series already settled on for these very lines.
+                val hints = if (mangaId != null && mangaId > 0) {
+                    memory.recall(mangaId, cleaned)
+                } else {
+                    emptyList()
+                }
+                val reference = hints.withNamesApplied(cleaned)
+                val translation = translateAll(reference, effectiveSource, target, hints)
                 val translatedBlocks = blocks.mapIndexedNotNull { index, block ->
                     val translated = translation.getOrNull(index)?.trim()
                     val hasLetters = translated != null && translated.any { it.isLetter() }
@@ -391,17 +400,19 @@ class PageTranslator(
         texts: List<String>,
         source: TranslationLanguage,
         target: TranslationLanguage,
+        hints: List<LearnedPair> = emptyList(),
     ): List<String?> {
         return try {
-            translator.translate(texts, source, target)
+            translator.translate(texts, source, target, hints)
         } catch (e: TranslationException) {
             if (texts.size <= 1) throw e
 
             // If the first block fails as well the provider is unreachable, so there's nothing to salvage.
-            val first = runCatching { translator.translate(listOf(texts.first()), source, target).first() }
-                .getOrElse { throw e }
+            val first = runCatching {
+                translator.translate(listOf(texts.first()), source, target, hints).first()
+            }.getOrElse { throw e }
             listOf(first) + texts.drop(1).map { text ->
-                runCatching { translator.translate(listOf(text), source, target).first() }.getOrNull()
+                runCatching { translator.translate(listOf(text), source, target, hints).first() }.getOrNull()
             }
         }
     }
@@ -438,6 +449,7 @@ class PageTranslator(
         OcrScript.KOREAN -> TranslationLanguage.KOREAN
         OcrScript.CHINESE -> TranslationLanguage.CHINESE_SIMPLIFIED
         OcrScript.LATIN -> TranslationLanguage.ENGLISH
+        OcrScript.ARABIC -> TranslationLanguage.ARABIC
     }
 
     /** What the recognizer read and the script it read it in. */

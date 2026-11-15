@@ -30,6 +30,8 @@ import java.util.Locale
  * pronouns, the names and the tone consistent, which is where the free endpoints fall apart on Japanese and
  * Korean dialogue.
  */
+private const val MAX_HINT_LINES = 12
+
 class AiTranslationService(
     private val networkHelper: NetworkHelper,
     private val preferences: TranslationPreferences,
@@ -39,6 +41,17 @@ class AiTranslationService(
         texts: List<String>,
         source: TranslationLanguage,
         target: TranslationLanguage,
+    ): List<String> = translate(texts, source, target, emptyList())
+
+    /**
+     * [hints] are lines a translated copy of the same series already rendered, so the model can reuse those names
+     * and turns of phrase instead of inventing its own.
+     */
+    suspend fun translate(
+        texts: List<String>,
+        source: TranslationLanguage,
+        target: TranslationLanguage,
+        hints: List<LearnedPair>,
     ): List<String> {
         if (texts.isEmpty()) return emptyList()
 
@@ -46,7 +59,7 @@ class AiTranslationService(
         val key = apiKey(backend)
         if (key.isBlank()) throw TranslationException(TranslationError.MISSING_API_KEY)
         val model = model(backend)
-        val language = languageInstruction(source, target)
+        val language = languageInstruction(source, target) + referenceInstruction(hints)
 
         val answer = try {
             requestBatch(backend, key, model, language, texts)
@@ -238,6 +251,18 @@ class AiTranslationService(
         AiBackend.GEMINI -> preferences.geminiModel.get().ifBlank { DEFAULT_GEMINI_MODEL }
         AiBackend.CLAUDE -> preferences.claudeModel.get().ifBlank { DEFAULT_CLAUDE_MODEL }
     }.trim()
+
+    private fun referenceInstruction(hints: List<LearnedPair>): String {
+        if (hints.isEmpty()) return ""
+        val examples = hints
+            .filter { it.source.isNotBlank() && it.target.isNotBlank() }
+            .take(MAX_HINT_LINES)
+            .joinToString(separator = "\n") { "${it.source}  =>  ${it.target}" }
+            .ifBlank { return "" }
+
+        return " The series is already translated elsewhere; keep its wording for these established lines and reuse " +
+            "the names and terms it chose, even when the raw text spells them differently:\n$examples"
+    }
 
     private fun languageInstruction(source: TranslationLanguage, target: TranslationLanguage): String {
         val from = if (source == TranslationLanguage.AUTO) {

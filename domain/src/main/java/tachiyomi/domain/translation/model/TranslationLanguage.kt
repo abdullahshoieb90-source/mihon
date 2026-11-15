@@ -11,7 +11,7 @@ enum class TranslationLanguage(
     val ocrScript: OcrScript?,
 ) {
     AUTO("auto", null),
-    ARABIC("ar", null),
+    ARABIC("ar", OcrScript.ARABIC),
     BENGALI("bn", null),
     BULGARIAN("bg", null),
     CHINESE_SIMPLIFIED("zh-Hans", OcrScript.CHINESE),

@@ -1138,6 +1138,14 @@
     <string name="translation_case_lower">abc</string>
     <string name="pref_translation_explicit">Mature dialogue (18+)</string>
     <string name="pref_translation_explicit_summary">Keeps the explicit wording instead of softening it. Works with the AI services.</string>
+    <string name="translation_learn">Learn from a translated copy</string>
+    <string name="translation_learn_summary">Read a translated entry of this series next to the raw one, so the names and wording it uses are reused here.</string>
+    <string name="translation_learn_pick">Pick the translated entry</string>
+    <string name="translation_learn_empty">No other library entries to learn from. Add the translated version to your library first.</string>
+    <string name="translation_learn_running">Reading chapter %1$d of %2$d… %3$d lines learned</string>
+    <string name="translation_learn_done">Learned %1$d lines from %2$d chapters. The next translations of this series will use them.</string>
+    <string name="translation_learn_failed">Learning failed: %s</string>
+    <string name="translation_learn_cancel">Cancel</string>
     <string name="pref_category_translation_ocr">Reading the images</string>
     <string name="pref_translation_ocr_quality">Reading quality</string>
     <string name="pref_translation_ocr_quality_summary">Fast reads only the outlines, accurate reads every line. Slow pages are read in less detail.</string>
