@@ -1146,6 +1146,10 @@
     <string name="translation_learn_done">Learned %1$d lines from %2$d chapters. The next translations of this series will use them.</string>
     <string name="translation_learn_failed">Learning failed: %s</string>
     <string name="translation_learn_cancel">Cancel</string>
+    <string name="translation_learn_no_key">Learning reads the translated copy by sight, which needs an API key from an AI service: Gemini, OpenAI or Claude. Add one in Settings › Translation.</string>
+    <string name="translation_learn_no_source">This source can't be read page by page, so nothing can be learned from it.</string>
+    <string name="translation_learn_no_shared">The two entries have no chapters with the same number.</string>
+    <string name="translation_learn_no_manga">The manga could not be found.</string>
     <string name="pref_category_translation_ocr">Reading the images</string>
     <string name="pref_translation_ocr_quality">Reading quality</string>
     <string name="pref_translation_ocr_quality_summary">Fast reads only the outlines, accurate reads every line. Slow pages are read in less detail.</string>

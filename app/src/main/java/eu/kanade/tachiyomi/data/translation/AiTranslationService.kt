@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
@@ -266,49 +267,151 @@ class AiTranslationService(
         rawImage: ByteArray,
         translatedImage: ByteArray,
     ): List<LearnedPair> {
-        val key = apiKey(AiBackend.GEMINI)
-        if (key.isBlank()) throw TranslationException(TranslationError.MISSING_API_KEY)
-        val model = preferences.geminiModel.get().ifBlank { DEFAULT_GEMINI_MODEL }.trim()
+        val withKeys = VISION_BACKENDS.filter { apiKey(it).isNotBlank() }
+        val preferred = runCatching { backendFor(preferences.provider.get()) }.getOrNull()
+        val backend = withKeys.firstOrNull { it == preferred } ?: withKeys.firstOrNull()
+            ?: throw TranslationException(TranslationError.MISSING_API_KEY)
+        val key = apiKey(backend)
+        val model = model(backend)
 
         val instruction = "The first image is a comic page in its original language. The second image is the same page " +
             "translated by a human. Read both and answer with only a JSON array. Each entry is an object with " +
             "\"original\" (the text of one speech bubble in the first image) and \"arabic\" (the same bubble in the " +
             "second image). Skip sound effects and anything drawn over the art. Keep the original wording exactly."
+
+        val request = when (backend) {
+            AiBackend.GEMINI -> geminiVisionRequest(key, model, instruction, rawImage, translatedImage)
+            AiBackend.OPENAI -> openAiVisionRequest(key, model, instruction, rawImage, translatedImage)
+            AiBackend.CLAUDE -> claudeVisionRequest(key, model, instruction, rawImage, translatedImage)
+        }
+
+        val body = networkHelper.client.executeForBody(request)
+        val answer = when (backend) {
+            AiBackend.GEMINI -> body.jsonPath("candidates", 0, "content", "parts", 0, "text")
+            AiBackend.OPENAI -> body.jsonPath("choices", 0, "message", "content")
+            AiBackend.CLAUDE -> body.jsonPath("content", 0, "text")
+        } ?: throw TranslationException(TranslationError.PROVIDER_ERROR, "Unexpected response from $backend")
+        return parsePairs(answer)
+    }
+
+    private fun geminiVisionRequest(
+        key: String,
+        model: String,
+        instruction: String,
+        raw: ByteArray,
+        translated: ByteArray,
+    ): Request {
         val body = buildJsonObject {
             putJsonArray("contents") {
                 addJsonObject {
                     putJsonArray("parts") {
                         addJsonObject { put("text", instruction) }
-                        addJsonObject {
-                            putJsonObject("inline_data") {
-                                put("mime_type", "image/jpeg")
-                                put("data", Base64.encodeToString(rawImage, Base64.NO_WRAP))
-                            }
-                        }
-                        addJsonObject {
-                            putJsonObject("inline_data") {
-                                put("mime_type", "image/jpeg")
-                                put("data", Base64.encodeToString(translatedImage, Base64.NO_WRAP))
-                            }
-                        }
+                        addJsonObject { putBase64Image("inline_data", raw) }
+                        addJsonObject { putBase64Image("inline_data", translated) }
                     }
                 }
             }
             putJsonObject("generationConfig") { put("temperature", 0.1) }
         }
-
-        val request = Request.Builder()
+        return Request.Builder()
             .url("$GEMINI_ENDPOINT/models/$model:generateContent")
             .header("x-goog-api-key", key)
             .header("Content-Type", JSON)
             .post(body.toString().toRequestBody(JSON_MEDIA))
             .build()
-
-        val response = networkHelper.client.executeForBody(request)
-        val answer = response.jsonPath("candidates", 0, "content", "parts", 0, "text")
-            ?: throw TranslationException(TranslationError.PROVIDER_ERROR, "Unexpected response from GEMINI")
-        return parsePairs(answer)
     }
+
+    private fun openAiVisionRequest(
+        key: String,
+        model: String,
+        instruction: String,
+        raw: ByteArray,
+        translated: ByteArray,
+    ): Request {
+        val body = buildJsonObject {
+            put("model", model)
+            put("temperature", 0.1)
+            putJsonArray("messages") {
+                addJsonObject {
+                    put("role", "user")
+                    putJsonArray("content") {
+                        addJsonObject {
+                            put("type", "text")
+                            put("text", instruction)
+                        }
+                        addJsonObject {
+                            put("type", "image_url")
+                            putJsonObject("image_url") { put("url", dataUrl(raw)) }
+                        }
+                        addJsonObject {
+                            put("type", "image_url")
+                            putJsonObject("image_url") { put("url", dataUrl(translated)) }
+                        }
+                    }
+                }
+            }
+        }
+        return Request.Builder()
+            .url("$OPENAI_ENDPOINT/chat/completions")
+            .header("Authorization", "Bearer $key")
+            .header("Content-Type", JSON)
+            .post(body.toString().toRequestBody(JSON_MEDIA))
+            .build()
+    }
+
+    private fun claudeVisionRequest(
+        key: String,
+        model: String,
+        instruction: String,
+        raw: ByteArray,
+        translated: ByteArray,
+    ): Request {
+        val body = buildJsonObject {
+            put("model", model)
+            put("max_tokens", 4096)
+            put("temperature", 0.1)
+            putJsonArray("messages") {
+                addJsonObject {
+                    put("role", "user")
+                    putJsonArray("content") {
+                        addJsonObject {
+                            put("type", "text")
+                            put("text", instruction)
+                        }
+                        addJsonObject {
+                            put("type", "image")
+                            putJsonObject("source") { putClaudeImage(raw) }
+                        }
+                        addJsonObject {
+                            put("type", "image")
+                            putJsonObject("source") { putClaudeImage(translated) }
+                        }
+                    }
+                }
+            }
+        }
+        return Request.Builder()
+            .url("$CLAUDE_ENDPOINT/messages")
+            .header("x-api-key", key)
+            .header("anthropic-version", "2023-06-01")
+            .header("Content-Type", JSON)
+            .post(body.toString().toRequestBody(JSON_MEDIA))
+            .build()
+    }
+
+    private fun JsonObjectBuilder.putBase64Image(field: String, bytes: ByteArray) {
+        put("mime_type", "image/jpeg")
+        put(field, Base64.encodeToString(bytes, Base64.NO_WRAP))
+    }
+
+    private fun JsonObjectBuilder.putClaudeImage(bytes: ByteArray) {
+        put("type", "base64")
+        put("media_type", "image/jpeg")
+        put("data", Base64.encodeToString(bytes, Base64.NO_WRAP))
+    }
+
+    private fun dataUrl(bytes: ByteArray): String =
+        "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
 
     private fun parsePairs(answer: String): List<LearnedPair> {
         val start = answer.indexOf('[')
@@ -360,6 +463,8 @@ class AiTranslationService(
     private enum class AiBackend { OPENAI, GEMINI, CLAUDE }
 
     companion object {
+        private val VISION_BACKENDS = listOf(AiBackend.GEMINI, AiBackend.OPENAI, AiBackend.CLAUDE)
+
         private const val OPENAI_ENDPOINT = "https://api.openai.com/v1"
         private const val GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta"
         private const val CLAUDE_ENDPOINT = "https://api.anthropic.com/v1"

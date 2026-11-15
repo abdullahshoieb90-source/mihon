@@ -1,6 +1,8 @@
 package eu.kanade.tachiyomi.data.translation
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.content.Context
 import android.graphics.BitmapFactory
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
@@ -16,11 +18,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import okhttp3.Request
+import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.translation.service.TranslationPreferences
+import tachiyomi.i18n.MR
 import java.io.ByteArrayOutputStream
 import kotlin.math.min
 
@@ -41,6 +45,7 @@ sealed interface TranslationLearningState {
 @Inject
 @SingleIn(AppScope::class)
 class TranslationMemoryLearner(
+    private val context: Context,
     private val sourceManager: SourceManager,
     private val getManga: GetManga,
     private val getChaptersByMangaId: GetChaptersByMangaId,
@@ -54,6 +59,14 @@ class TranslationMemoryLearner(
     private val mutableState = MutableStateFlow<TranslationLearningState>(TranslationLearningState.Idle)
     val state: StateFlow<TranslationLearningState> = mutableState.asStateFlow()
 
+    private fun unknown(): String = context.stringResource(MR.strings.translation_learn_failed, "")
+
+    private fun hasVisionKey(): Boolean = listOf(
+        preferences.geminiApiKey.get(),
+        preferences.openAiApiKey.get(),
+        preferences.claudeApiKey.get(),
+    ).any { it.isNotBlank() }
+
     fun reset() {
         mutableState.value = TranslationLearningState.Idle
     }
@@ -65,23 +78,25 @@ class TranslationMemoryLearner(
     suspend fun learn(rawMangaId: Long, translatedMangaId: Long) = withContext(Dispatchers.IO) {
         mutableState.value = TranslationLearningState.Running(chapter = 0, chapters = 0, pairs = 0)
         try {
-            if (preferences.geminiApiKey.get().isBlank()) {
-                return@withContext fail(MISSING_KEY)
+            if (hasVisionKey().not()) {
+                return@withContext fail(context.stringResource(MR.strings.translation_learn_no_key))
             }
 
-            val rawManga = getManga.await(rawMangaId) ?: return@withContext fail(NO_MANGA)
-            val translatedManga = getManga.await(translatedMangaId) ?: return@withContext fail(NO_MANGA)
+            val noManga = context.stringResource(MR.strings.translation_learn_no_manga)
+            val noSource = context.stringResource(MR.strings.translation_learn_no_source)
+            val rawManga = getManga.await(rawMangaId) ?: return@withContext fail(noManga)
+            val translatedManga = getManga.await(translatedMangaId) ?: return@withContext fail(noManga)
 
             val rawSource = sourceManager.getOrStub(rawManga.source) as? HttpSource
-                ?: return@withContext fail(NO_SOURCE)
+                ?: return@withContext fail(noSource)
             val translatedSource = sourceManager.getOrStub(translatedManga.source) as? HttpSource
-                ?: return@withContext fail(NO_SOURCE)
+                ?: return@withContext fail(noSource)
 
             val chapters = matchChapters(
                 raw = getChaptersByMangaId.await(rawMangaId).readable(),
                 translated = getChaptersByMangaId.await(translatedMangaId).readable(),
             )
-            if (chapters.isEmpty()) return@withContext fail(NO_SHARED_CHAPTERS)
+            if (chapters.isEmpty()) return@withContext fail(context.stringResource(MR.strings.translation_learn_no_shared))
 
             var learned = 0
             var done = 0
@@ -102,9 +117,9 @@ class TranslationMemoryLearner(
             mutableState.value = TranslationLearningState.Idle
             throw e
         } catch (e: TranslationException) {
-            fail(e.message ?: UNKNOWN)
+            fail(e.message ?: unknown())
         } catch (e: Exception) {
-            fail(e.message ?: UNKNOWN)
+            fail(e.message ?: unknown())
         }
     }
 
@@ -184,13 +199,6 @@ class TranslationMemoryLearner(
     }
 
     companion object {
-        private const val NO_MANGA = "The manga could not be found"
-        private const val NO_SOURCE = "This source can't be read page by page, so nothing can be learned from it."
-        private const val NO_SHARED_CHAPTERS = "The two entries have no chapters with the same number."
-        private const val UNKNOWN = "Learning failed"
-        private const val MISSING_KEY =
-            "Learning reads the translated copy by sight, which needs a free Gemini API key in the translation " +
-                "settings."
         private const val MAX_WIDTH = 1100
         private const val JPEG_QUALITY = 80
         private const val MAX_PAGES_PER_CHAPTER = 80

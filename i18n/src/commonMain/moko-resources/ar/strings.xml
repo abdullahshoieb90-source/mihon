@@ -958,6 +958,10 @@
     <string name="translation_learn_done">تعلّم %1$d سطرًا من %2$d فصلًا. الترجمة القادمة لهذا العمل ستستخدمها.</string>
     <string name="translation_learn_failed">فشل التعلّم: %s</string>
     <string name="translation_learn_cancel">إلغاء</string>
+    <string name="translation_learn_no_key">التعلّم يقرأ النسخة المترجمة بالصورة، ويحتاج مفتاحًا من خدمة ذكاء اصطناعي: Gemini أو OpenAI أو Claude. أضِفه من الإعدادات ← الترجمة.</string>
+    <string name="translation_learn_no_source">هذا المصدر لا يمكن قراءته صفحة بصفحة، فلا يمكن التعلّم منه.</string>
+    <string name="translation_learn_no_shared">لا توجد فصول تحمل الرقم نفسه في النسختين.</string>
+    <string name="translation_learn_no_manga">لم يتم العثور على العمل.</string>
     <string name="pref_category_translation_ocr">قراءة الصور</string>
     <string name="pref_translation_ocr_quality">جودة القراءة</string>
     <string name="pref_translation_ocr_quality_summary">«سريع» يقرأ الخطوط العريضة فقط، و«دقيق» يقرأ كل سطر. الصفحات البطيئة تُقرأ بتفصيل أقل.</string>
