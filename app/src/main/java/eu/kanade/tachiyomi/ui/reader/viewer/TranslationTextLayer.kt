@@ -163,11 +163,14 @@ class TranslationTextLayer(context: Context) : View(context) {
         val top = centerY - coverHeight / 2f
 
         val chosenColor = TranslationTextColor.of(preferences.textColor.get())
-        // A fixed colour still needs a readable plate, so the plate follows the chosen lettering brightness.
-        val light = chosenColor?.let { isLightColor(it) } ?: lightCache.getOrPut(block) {
-            isLightAround(preview, previewScale, block.box)
+        // Without a fixed colour the plate follows the page: a white bubble gets a white plate and black lettering.
+        // With one, the plate has to be the opposite of the lettering or the text disappears into it.
+        val plateIsLight = if (chosenColor != null) {
+            !isLightColor(chosenColor)
+        } else {
+            lightCache.getOrPut(block) { isLightAround(preview, previewScale, block.box) }
         }
-        erasePaint.color = if (light) Color.WHITE else Color.rgb(14, 14, 14)
+        erasePaint.color = if (plateIsLight) Color.WHITE else Color.rgb(14, 14, 14)
         val corner = 2f * density
         canvas.save()
         canvas.clipRect(left, top, left + coverWidth, top + coverHeight)
@@ -181,7 +184,7 @@ class TranslationTextLayer(context: Context) : View(context) {
             erasePaint,
         )
 
-        textPaint.color = chosenColor ?: if (light) Color.BLACK else Color.WHITE
+        textPaint.color = chosenColor ?: if (plateIsLight) Color.BLACK else Color.WHITE
         canvas.translate(centerX, top + (coverHeight - textHeight) / 2f)
         layout.draw(canvas)
         canvas.restore()
