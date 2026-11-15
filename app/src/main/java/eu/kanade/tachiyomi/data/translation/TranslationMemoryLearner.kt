@@ -148,7 +148,7 @@ class TranslationMemoryLearner(
 
     private fun Double.key(): Long = (this * 100).toLong()
 
-    private fun List<Chapter>.readable(): List<Chapter> = filterNot { it.isNotAvailable }
+    private fun List<Chapter>.readable(): List<Chapter> = filter { it.url.isNotBlank() }
 
     /** The page as JPEG bytes, small enough to send but sharp enough to read lettering. */
     private suspend fun fetch(source: HttpSource, page: Page): ByteArray? {

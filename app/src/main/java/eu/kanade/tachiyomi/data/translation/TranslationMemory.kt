@@ -131,18 +131,23 @@ class TranslationMemoryStore(
  * translation already settled. Swapping them into the source text before translating makes every provider keep them,
  * because a foreign name inside a sentence is copied through untouched.
  */
-fun List<LearnedPair>.withNamesApplied(text: String): String {
-    if (isEmpty()) return text
-    var result = text
-    forEach { pair ->
+fun List<LearnedPair>.withNamesApplied(texts: List<String>): List<String> {
+    if (isEmpty()) return texts
+    val names = mapNotNull { pair ->
         val source = pair.source.trim()
         val target = pair.target.trim()
         val words = source.count { it == ' ' } + 1
-        if (source.length < 2 || target.isEmpty() || words > MAX_NAME_WORDS) return@forEach
-        if (!result.contains(source)) return@forEach
-        result = result.replace(source, target)
+        if (source.length < 2 || target.isEmpty() || words > MAX_NAME_WORDS) null else source to target
+    }.sortedByDescending { (source, _) -> source.length }
+    if (names.isEmpty()) return texts
+
+    return texts.map { text ->
+        var result = text
+        names.forEach { (source, target) ->
+            if (result.contains(source)) result = result.replace(source, target)
+        }
+        result
     }
-    return result
 }
 
 private const val MAX_NAME_WORDS = 3
