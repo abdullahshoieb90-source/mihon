@@ -15,9 +15,9 @@ import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.putJsonObject
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
@@ -255,7 +255,6 @@ class AiTranslationService(
         AiBackend.GEMINI -> preferences.geminiModel.get().ifBlank { DEFAULT_GEMINI_MODEL }
         AiBackend.CLAUDE -> preferences.claudeModel.get().ifBlank { DEFAULT_CLAUDE_MODEL }
     }.trim()
-
 
     /**
      * Reads the same page twice over — the original art and its human translation — and answers with the text of each
