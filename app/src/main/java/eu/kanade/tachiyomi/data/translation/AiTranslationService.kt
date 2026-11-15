@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.data.translation
 
+import android.util.Base64
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
@@ -14,6 +15,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.putJsonObject
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
@@ -251,6 +253,77 @@ class AiTranslationService(
         AiBackend.GEMINI -> preferences.geminiModel.get().ifBlank { DEFAULT_GEMINI_MODEL }
         AiBackend.CLAUDE -> preferences.claudeModel.get().ifBlank { DEFAULT_CLAUDE_MODEL }
     }.trim()
+
+
+    /**
+     * Reads the same page twice over — the original art and its human translation — and answers with the text of each
+     * bubble in both languages.
+     *
+     * The translated copy is a picture, and no on-device recognizer reads Arabic lettering, so a model that can see
+     * gets asked instead. Pairing the two versions by eye is also more reliable than matching bubble boxes.
+     */
+    suspend fun readTranslatedPage(
+        rawImage: ByteArray,
+        translatedImage: ByteArray,
+    ): List<LearnedPair> {
+        val key = apiKey(AiBackend.GEMINI)
+        if (key.isBlank()) throw TranslationException(TranslationError.MISSING_API_KEY)
+        val model = preferences.geminiModel.get().ifBlank { DEFAULT_GEMINI_MODEL }.trim()
+
+        val instruction = "The first image is a comic page in its original language. The second image is the same page " +
+            "translated by a human. Read both and answer with only a JSON array. Each entry is an object with " +
+            "\"original\" (the text of one speech bubble in the first image) and \"arabic\" (the same bubble in the " +
+            "second image). Skip sound effects and anything drawn over the art. Keep the original wording exactly."
+        val body = buildJsonObject {
+            putJsonArray("contents") {
+                addJsonObject {
+                    putJsonArray("parts") {
+                        addJsonObject { put("text", instruction) }
+                        addJsonObject {
+                            putJsonObject("inline_data") {
+                                put("mime_type", "image/jpeg")
+                                put("data", Base64.encodeToString(rawImage, Base64.NO_WRAP))
+                            }
+                        }
+                        addJsonObject {
+                            putJsonObject("inline_data") {
+                                put("mime_type", "image/jpeg")
+                                put("data", Base64.encodeToString(translatedImage, Base64.NO_WRAP))
+                            }
+                        }
+                    }
+                }
+            }
+            putJsonObject("generationConfig") { put("temperature", 0.1) }
+        }
+
+        val request = Request.Builder()
+            .url("$GEMINI_ENDPOINT/models/$model:generateContent")
+            .header("x-goog-api-key", key)
+            .header("Content-Type", JSON)
+            .post(body.toString().toRequestBody(JSON_MEDIA))
+            .build()
+
+        val response = networkHelper.client.executeForBody(request)
+        val answer = response.jsonPath("candidates", 0, "content", "parts", 0, "text")
+            ?: throw TranslationException(TranslationError.PROVIDER_ERROR, "Unexpected response from GEMINI")
+        return parsePairs(answer)
+    }
+
+    private fun parsePairs(answer: String): List<LearnedPair> {
+        val start = answer.indexOf('[')
+        val end = answer.lastIndexOf(']')
+        if (start < 0 || end <= start) return emptyList()
+        val array = runCatching { Json.Default.parseToJsonElement(answer.substring(start, end + 1)) }
+            .getOrNull() as? JsonArray ?: return emptyList()
+
+        return array.mapNotNull { element ->
+            val item = element as? JsonObject ?: return@mapNotNull null
+            val source = item["original"]?.jsonPrimitive?.content?.trim().orEmpty()
+            val target = item["arabic"]?.jsonPrimitive?.content?.trim().orEmpty()
+            if (source.length < 2 || target.length < 2) null else LearnedPair(source, target)
+        }
+    }
 
     private fun referenceInstruction(hints: List<LearnedPair>): String {
         if (hints.isEmpty()) return ""

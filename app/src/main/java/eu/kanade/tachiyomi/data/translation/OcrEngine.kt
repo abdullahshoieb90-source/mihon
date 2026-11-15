@@ -6,7 +6,6 @@ import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
-import com.google.mlkit.vision.text.arabic.ArabicTextRecognizerOptions
 import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
@@ -309,7 +308,6 @@ class OcrEngine {
         OcrScript.CHINESE -> TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
         OcrScript.KOREAN -> TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
         OcrScript.LATIN -> TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-        OcrScript.ARABIC -> TextRecognition.getClient(ArabicTextRecognizerOptions.Builder().build())
     }
 
     private suspend fun <T> Task<T>.awaitResult(): T = suspendCancellableCoroutine { continuation ->

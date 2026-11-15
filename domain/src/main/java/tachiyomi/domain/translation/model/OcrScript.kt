@@ -5,7 +5,6 @@ package tachiyomi.domain.translation.model
  */
 enum class OcrScript {
     LATIN,
-    ARABIC,
     JAPANESE,
     CHINESE,
     KOREAN,

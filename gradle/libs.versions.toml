@@ -173,7 +173,6 @@ mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version
 mlkit-text-recognition-chinese = { module = "com.google.mlkit:text-recognition-chinese", version.ref = "mlkit-text-recognition" }
 mlkit-text-recognition-japanese = { module = "com.google.mlkit:text-recognition-japanese", version.ref = "mlkit-text-recognition" }
 mlkit-text-recognition-korean = { module = "com.google.mlkit:text-recognition-korean", version.ref = "mlkit-text-recognition" }
-mlkit-text-recognition-arabic = { module = "com.google.mlkit:text-recognition-arabic", version.ref = "mlkit-text-recognition" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 moko-resources = { module = "dev.icerock.moko:resources", version.ref = "moko-resources" }
 natural-comparator = { module = "com.github.gpanther:java-nat-sort", version = "natural-comparator-1.1" }

@@ -449,7 +449,6 @@ class PageTranslator(
         OcrScript.KOREAN -> TranslationLanguage.KOREAN
         OcrScript.CHINESE -> TranslationLanguage.CHINESE_SIMPLIFIED
         OcrScript.LATIN -> TranslationLanguage.ENGLISH
-        OcrScript.ARABIC -> TranslationLanguage.ARABIC
     }
 
     /** What the recognizer read and the script it read it in. */
