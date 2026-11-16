@@ -39,12 +39,12 @@ class TranslationMemoryStore(
 
     private val json = Json { ignoreUnknownKeys = true }
     private val mutex = Mutex()
-    private val cache = mutableMapOf<Long, List<LearnedPair>>()
+    private val cache = mutableMapOf<String, List<LearnedPair>>()
 
     /** The pairs of this series whose lines share the most words with [texts], best first. */
-    suspend fun recall(mangaId: Long, texts: List<String>, limit: Int = MAX_HINTS): List<LearnedPair> {
+    suspend fun recall(seriesKey: String, texts: List<String>, limit: Int = MAX_HINTS): List<LearnedPair> {
         if (texts.isEmpty()) return emptyList()
-        val pairs = load(mangaId)
+        val pairs = load(seriesKey)
         if (pairs.isEmpty()) return emptyList()
 
         val words = texts.flatMap { it.words() }.toSet()
@@ -58,36 +58,36 @@ class TranslationMemoryStore(
             .map { (pair, _) -> pair }
     }
 
-    suspend fun count(mangaId: Long): Int = load(mangaId).size
+    suspend fun count(seriesKey: String): Int = load(seriesKey).size
 
     /** Adds what was just learned, newest reading winning over an older one for the same source line. */
-    suspend fun remember(mangaId: Long, pairs: List<LearnedPair>): Int = withContext(Dispatchers.IO) {
-        if (pairs.isEmpty()) return@withContext count(mangaId)
+    suspend fun remember(seriesKey: String, pairs: List<LearnedPair>): Int = withContext(Dispatchers.IO) {
+        if (pairs.isEmpty()) return@withContext count(seriesKey)
         mutex.withLock {
-            val existing = fileFor(mangaId).takeIf { it.exists() }?.let { read(it) }.orEmpty()
+            val existing = fileFor(seriesKey).takeIf { it.exists() }?.let { read(it) }.orEmpty()
             val merged = LinkedHashMap<String, LearnedPair>()
             pairs.forEach { merged[it.source] = it }
             existing.forEach { merged.putIfAbsent(it.source, it) }
             val kept = merged.values.toList().takeLast(MAX_PAIRS)
-            cache[mangaId] = kept
-            write(mangaId, kept)
+            cache[seriesKey] = kept
+            write(seriesKey, kept)
             kept.size
         }
     }
 
-    suspend fun clear(mangaId: Long) = withContext(Dispatchers.IO) {
+    suspend fun clear(seriesKey: String) = withContext(Dispatchers.IO) {
         mutex.withLock {
-            cache.remove(mangaId)
-            fileFor(mangaId).delete()
+            cache.remove(seriesKey)
+            fileFor(seriesKey).delete()
         }
     }
 
-    private suspend fun load(mangaId: Long): List<LearnedPair> = withContext(Dispatchers.IO) {
+    private suspend fun load(seriesKey: String): List<LearnedPair> = withContext(Dispatchers.IO) {
         mutex.withLock {
-            cache[mangaId] ?: run {
-                val file = fileFor(mangaId)
+            cache[seriesKey] ?: run {
+                val file = fileFor(seriesKey)
                 val pairs = if (file.exists()) read(file) else emptyList()
-                cache[mangaId] = pairs
+                cache[seriesKey] = pairs
                 pairs
             }
         }
@@ -97,14 +97,17 @@ class TranslationMemoryStore(
         json.decodeFromString<MemoryFile>(file.readText()).pairs
     }.getOrDefault(emptyList())
 
-    private fun write(mangaId: Long, pairs: List<LearnedPair>) {
+    private fun write(seriesKey: String, pairs: List<LearnedPair>) {
         runCatching {
             val dir = File(context.filesDir, DIRECTORY).apply { mkdirs() }
-            File(dir, "$mangaId.json").writeText(json.encodeToString(MemoryFile(pairs)))
+            File(dir, "${fileName(seriesKey)}.json").writeText(json.encodeToString(MemoryFile(pairs)))
         }
     }
 
-    private fun fileFor(mangaId: Long) = File(File(context.filesDir, DIRECTORY), "$mangaId.json")
+    private fun fileFor(seriesKey: String) = File(File(context.filesDir, DIRECTORY), "${fileName(seriesKey)}.json")
+
+    /** Titles carry spaces and punctuation; the file just needs to be stable and unique. */
+    private fun fileName(seriesKey: String): String = Integer.toHexString(seriesKey.hashCode())
 
     private fun String.words(): List<String> = split(' ', '\n', '\t', '.', ',', '!', '?', '…', '"', '\'', '(', ')')
         .map { it.trim().lowercase() }
@@ -151,3 +154,13 @@ fun List<LearnedPair>.withNamesApplied(texts: List<String>): List<String> {
 }
 
 private const val MAX_NAME_WORDS = 3
+
+/**
+ * What a learned memory belongs to: the series itself, not one library entry, so a second copy of the same work from
+ * another source reads the same names.
+ */
+fun seriesKeyOf(title: String): String = title
+    .lowercase()
+    .replace(Regex("[\\p{P}\\p{S}]+"), " ")
+    .replace(Regex("\\s+"), " ")
+    .trim()

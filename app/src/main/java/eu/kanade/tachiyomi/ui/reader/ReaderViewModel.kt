@@ -980,7 +980,7 @@ class ReaderViewModel(
             mutableTranslationState.value = TranslationState.Loading
             try {
                 mutableTranslationState.value = TranslationState.Success(
-                    pageTranslator.translate(page.index, page.stream, mangaId),
+                    pageTranslator.translate(page.index, page.stream, mangaId, manga?.title),
                 )
             } catch (e: CancellationException) {
                 throw e
@@ -1043,7 +1043,7 @@ class ReaderViewModel(
                     } ?: return@launch
                 }
 
-                val translated = pageTranslator.translate(page.index, page.stream, mangaId)
+                val translated = pageTranslator.translate(page.index, page.stream, mangaId, manga?.title)
                 untranslatablePages.remove(page.index)
                 storeTranslation(page.index, translated)
                 prefetchTranslations(page.index)
@@ -1119,7 +1119,7 @@ class ReaderViewModel(
                 if (translationJobs.containsKey(next.index)) continue
 
                 try {
-                    val translated = pageTranslator.translate(next.index, next.stream, mangaId)
+                    val translated = pageTranslator.translate(next.index, next.stream, mangaId, manga?.title)
                     storeTranslation(next.index, translated)
                     done++
                 } catch (e: CancellationException) {

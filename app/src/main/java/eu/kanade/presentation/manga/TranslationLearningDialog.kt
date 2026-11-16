@@ -36,6 +36,7 @@ data class TranslationLearningUiState(
 fun TranslationLearningDialog(
     state: TranslationLearningUiState,
     onPick: (Long) -> Unit,
+    onStop: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!state.visible) return
@@ -78,19 +79,25 @@ fun TranslationLearningDialog(
                     }
                 }
                 is TranslationLearningState.Running -> {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        CircularProgressIndicator()
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CircularProgressIndicator()
+                            Text(
+                                stringResource(
+                                    MR.strings.translation_learn_running,
+                                    learning.chapter,
+                                    learning.chapters,
+                                    learning.pairs,
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
                         Text(
-                            stringResource(
-                                MR.strings.translation_learn_running,
-                                learning.chapter,
-                                learning.chapters,
-                                learning.pairs,
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = stringResource(MR.strings.translation_learn_background),
+                            style = MaterialTheme.typography.bodySmall,
                         )
                     }
                 }
@@ -113,13 +120,14 @@ fun TranslationLearningDialog(
             }
         },
         confirmButton = {
-            val running = learning is TranslationLearningState.Running
-            TextButton(onClick = onDismiss) {
-                Text(
-                    stringResource(
-                        if (running) MR.strings.translation_learn_cancel else MR.strings.action_ok,
-                    ),
-                )
+            if (learning is TranslationLearningState.Running) {
+                TextButton(onClick = { onStop(); onDismiss() }) {
+                    Text(stringResource(MR.strings.translation_learn_stop))
+                }
+            } else {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(MR.strings.action_ok))
+                }
             }
         },
     )

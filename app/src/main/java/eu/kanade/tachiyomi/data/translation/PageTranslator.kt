@@ -60,6 +60,7 @@ class PageTranslator(
         pageIndex: Int,
         openStream: (() -> InputStream)?,
         mangaId: Long? = null,
+        seriesTitle: String? = null,
     ): TranslatedPage = withContext(Dispatchers.IO) {
         val open = openStream ?: throw TranslationException(TranslationError.PAGE_NOT_AVAILABLE)
         val source = translator.sourceLanguage
@@ -115,11 +116,9 @@ class PageTranslator(
                     source
                 }
                 // What a translated copy of this series already settled on for these very lines.
-                val hints = if (mangaId != null && mangaId > 0) {
-                    memory.recall(mangaId, cleaned)
-                } else {
-                    emptyList()
-                }
+                val seriesKey = seriesTitle?.takeIf { it.isNotBlank() }?.let { seriesKeyOf(it) }
+                    ?: mangaId?.takeIf { it > 0 }?.toString()
+                val hints = if (seriesKey != null) memory.recall(seriesKey, cleaned) else emptyList()
                 val reference = hints.withNamesApplied(cleaned)
                 val translation = translateAll(reference, effectiveSource, target, hints)
                 val translatedBlocks = blocks.mapIndexedNotNull { index, block ->

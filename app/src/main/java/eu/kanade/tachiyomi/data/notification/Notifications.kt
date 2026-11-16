@@ -63,6 +63,12 @@ object Notifications {
      * Notification channel used for Incognito Mode
      */
     const val CHANNEL_INCOGNITO_MODE = "incognito_mode_channel"
+
+    /**
+     * Notification channel and ids used while a series learns its translation from a translated copy.
+     */
+    const val CHANNEL_TRANSLATION_LEARNING = "translation_learning_channel"
+    const val ID_TRANSLATION_LEARNING = -401
     const val ID_INCOGNITO_MODE = -701
 
     /**
@@ -153,6 +159,10 @@ object Notifications {
                     setGroup(GROUP_BACKUP_RESTORE)
                     setShowBadge(false)
                     setSound(null, null)
+                },
+                buildNotificationChannel(CHANNEL_TRANSLATION_LEARNING, IMPORTANCE_LOW) {
+                    setName(context.stringResource(MR.strings.translation_learn))
+                    setShowBadge(false)
                 },
                 buildNotificationChannel(CHANNEL_INCOGNITO_MODE, IMPORTANCE_LOW) {
                     setName(context.stringResource(MR.strings.pref_incognito_mode))

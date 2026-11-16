@@ -48,6 +48,8 @@ import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.translation.TranslationError
 import eu.kanade.tachiyomi.data.translation.TranslationException
+import eu.kanade.tachiyomi.data.translation.TranslationLearningState
+import eu.kanade.tachiyomi.data.translation.TranslationLearningWorker
 import eu.kanade.tachiyomi.data.translation.TranslationMemoryLearner
 import eu.kanade.tachiyomi.data.translation.Translator
 import eu.kanade.tachiyomi.source.Source
@@ -208,7 +210,6 @@ class MangaViewModel(
 
     private val mutableLearning = MutableStateFlow(TranslationLearningUiState())
     val learning = mutableLearning.asStateFlow()
-    private var learningJob: Job? = null
 
     private val isRefreshingData = MutableStateFlow(false)
 
@@ -1141,6 +1142,10 @@ class MangaViewModel(
 
     fun showLearningDialog() {
         val current = manga ?: return
+        // A finished run belongs to the past; the picker starts fresh, while a running one keeps its progress.
+        if (translationMemoryLearner.state.value !is TranslationLearningState.Running) {
+            translationMemoryLearner.reset()
+        }
         viewModelScope.launch {
             val candidates = getLibraryManga.await()
                 .filter { it.id != current.id }
@@ -1151,17 +1156,22 @@ class MangaViewModel(
         }
     }
 
+    /**
+     * Learning runs as background work, so closing the screen, reading something else or leaving the app keeps it
+     * going. The dialog only watches it.
+     */
     fun learnFromTranslatedCopy(translatedMangaId: Long) {
         val current = manga ?: return
-        learningJob?.cancel()
-        learningJob = viewModelScope.launch {
-            translationMemoryLearner.learn(current.id, translatedMangaId)
-        }
+        TranslationLearningWorker.start(context, current.id, translatedMangaId)
+    }
+
+    fun stopLearning() {
+        TranslationLearningWorker.cancel(context)
+        translationMemoryLearner.reset()
+        mutableLearning.value = TranslationLearningUiState()
     }
 
     fun dismissLearningDialog() {
-        learningJob?.cancel()
-        learningJob = null
         translationMemoryLearner.reset()
         mutableLearning.value = TranslationLearningUiState()
     }

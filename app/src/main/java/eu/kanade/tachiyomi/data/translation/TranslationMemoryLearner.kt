@@ -109,12 +109,13 @@ class TranslationMemoryLearner(
                 )
             }
 
+            val seriesKey = seriesKeyOf(rawManga.title)
             var learned = 0
             var done = 0
             chapters.forEach { (raw, translated) ->
                 mutableState.value = TranslationLearningState.Running(done, chapters.size, learned)
                 val pairs = readChapter(rawSource, translatedSource, raw, translated)
-                if (pairs.isNotEmpty()) learned = store.remember(rawMangaId, pairs)
+                if (pairs.isNotEmpty()) learned = store.remember(seriesKey, pairs)
                 done++
                 mutableState.value = TranslationLearningState.Running(done, chapters.size, learned)
             }
@@ -122,7 +123,7 @@ class TranslationMemoryLearner(
             mutableState.value = TranslationLearningState.Done(
                 chapters = done,
                 pairs = learned,
-                total = store.count(rawMangaId),
+                total = store.count(seriesKey),
             )
         } catch (e: CancellationException) {
             mutableState.value = TranslationLearningState.Idle

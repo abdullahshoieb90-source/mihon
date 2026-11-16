@@ -1153,6 +1153,9 @@
     <string name="translation_learn_busy">The AI service is overloaded right now. Try again in a minute.</string>
     <string name="pref_translation_text_scale">Translation size</string>
     <string name="pref_translation_text_scale_summary">100% matches the original lettering; raise it if the translation looks small.</string>
+    <string name="translation_learn_preparing">Preparing…</string>
+    <string name="translation_learn_stop">Stop</string>
+    <string name="translation_learn_background">This keeps running in the background: you can leave this screen, read something else, or close the app.</string>
     <string name="pref_category_translation_ocr">Reading the images</string>
     <string name="pref_translation_ocr_quality">Reading quality</string>
     <string name="pref_translation_ocr_quality_summary">Fast reads only the outlines, accurate reads every line. Slow pages are read in less detail.</string>

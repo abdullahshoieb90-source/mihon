@@ -185,6 +185,7 @@ class MangaScreen(
         TranslationLearningDialog(
             state = learning,
             onPick = viewModel::learnFromTranslatedCopy,
+            onStop = viewModel::stopLearning,
             onDismiss = viewModel::dismissLearningDialog,
         )
 
