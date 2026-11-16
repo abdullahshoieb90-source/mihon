@@ -11,9 +11,9 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import dev.zacsweers.metro.Inject
 import eu.kanade.tachiyomi.data.notification.Notifications
-import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
 import eu.kanade.tachiyomi.util.system.workManager
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.app.di.AppGraph
@@ -48,33 +48,34 @@ class TranslationLearningWorker(
 
         setForegroundSafely()
 
-        val watcher = launch {
-            learner.state.collect { state ->
-                if (state is TranslationLearningState.Running) {
-                    notifier.showProgress(state.chapter, state.chapters, state.pairs)
+        return coroutineScope {
+            val watcher = launch {
+                learner.state.collect { state ->
+                    if (state is TranslationLearningState.Running) {
+                        notifier.showProgress(state.chapter, state.chapters, state.pairs)
+                    }
                 }
             }
-        }
-
-        return try {
-            learner.learn(rawId, translatedId)
-            when (val state = learner.state.value) {
-                is TranslationLearningState.Done -> {
-                    notifier.showDone(state.pairs, state.chapters)
-                    Result.success()
+            try {
+                learner.learn(rawId, translatedId)
+                when (val state = learner.state.value) {
+                    is TranslationLearningState.Done -> {
+                        notifier.showDone(state.pairs, state.chapters)
+                        Result.success()
+                    }
+                    is TranslationLearningState.Failed -> {
+                        notifier.showFailure(state.message)
+                        Result.failure()
+                    }
+                    else -> Result.success()
                 }
-                is TranslationLearningState.Failed -> {
-                    notifier.showFailure(state.message)
-                    Result.failure()
-                }
-                else -> Result.success()
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+                notifier.showFailure(e.message.orEmpty())
+                Result.failure()
+            } finally {
+                watcher.cancel()
             }
-        } catch (e: Exception) {
-            logcat(LogPriority.ERROR, e)
-            notifier.showFailure(e.message.orEmpty())
-            Result.failure()
-        } finally {
-            watcher.cancel()
         }
     }
 
@@ -94,7 +95,6 @@ class TranslationLearningWorker(
         private const val TAG = "TranslationLearning"
 
         fun start(context: Context, rawMangaId: Long, translatedMangaId: Long) {
-            if (context.workManager.isRunning(TAG)) return
             val request = OneTimeWorkRequestBuilder<TranslationLearningWorker>()
                 .addTag(TAG)
                 .setInputData(
@@ -104,6 +104,7 @@ class TranslationLearningWorker(
                     ),
                 )
                 .build()
+            // KEEP: a run already going is not restarted by asking again.
             context.workManager.enqueueUniqueWork(TAG, ExistingWorkPolicy.KEEP, request)
         }
 
