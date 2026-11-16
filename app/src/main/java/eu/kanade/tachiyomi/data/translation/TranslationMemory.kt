@@ -207,14 +207,14 @@ fun List<LearnedPair>.withNamesApplied(texts: List<String>): List<String> {
 private const val MAX_NAME_WORDS = 3
 
 /**
- * What a learned memory belongs to: the series itself, not one library entry, so a second copy of the same work from
- * another source reads the same names.
- */
-/**
  * The key a source-wide style is filed under: a series of its own, so any work can borrow its wording.
  */
 fun styleKeyOf(sourceId: Long): String = "style:$sourceId"
 
+/**
+ * What a learned memory belongs to: the series itself, not one library entry, so a second copy of the same work from
+ * another source reads the same names.
+ */
 fun seriesKeyOf(title: String): String = title
     .lowercase()
     .replace(Regex("[\\p{P}\\p{S}]+"), " ")
