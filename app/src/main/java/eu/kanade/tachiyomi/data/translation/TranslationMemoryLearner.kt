@@ -110,12 +110,18 @@ class TranslationMemoryLearner(
             }
 
             val seriesKey = seriesKeyOf(rawManga.title)
+            val styleKey = styleKeyOf(translatedManga.source)
+            val styleName = translatedSource.name
             var learned = 0
             var done = 0
             chapters.forEach { (raw, translated) ->
                 mutableState.value = TranslationLearningState.Running(done, chapters.size, learned)
                 val pairs = readChapter(rawSource, translatedSource, raw, translated)
-                if (pairs.isNotEmpty()) learned = store.remember(seriesKey, pairs)
+                if (pairs.isNotEmpty()) {
+                    learned = store.remember(seriesKey, pairs)
+                    // The same reading teaches the source's style, which every other series can borrow.
+                    store.remember(styleKey, pairs, sourceId = translatedManga.source, sourceName = styleName)
+                }
                 done++
                 mutableState.value = TranslationLearningState.Running(done, chapters.size, learned)
             }

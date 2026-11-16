@@ -22,6 +22,16 @@ data class LearnedPair(
 @Serializable
 private data class MemoryFile(
     val pairs: List<LearnedPair> = emptyList(),
+    /** Set on a style memory: the source it was learned from, so the settings screen can list it. */
+    val sourceId: Long? = null,
+    val sourceName: String? = null,
+)
+
+/** A translation style learned from one source, offered to every other series. */
+data class LearnedStyle(
+    val sourceId: Long,
+    val sourceName: String,
+    val pairs: Int,
 )
 
 /**
@@ -61,18 +71,48 @@ class TranslationMemoryStore(
     suspend fun count(seriesKey: String): Int = load(seriesKey).size
 
     /** Adds what was just learned, newest reading winning over an older one for the same source line. */
-    suspend fun remember(seriesKey: String, pairs: List<LearnedPair>): Int = withContext(Dispatchers.IO) {
+    suspend fun remember(
+        seriesKey: String,
+        pairs: List<LearnedPair>,
+        sourceId: Long? = null,
+        sourceName: String? = null,
+    ): Int = withContext(Dispatchers.IO) {
         if (pairs.isEmpty()) return@withContext count(seriesKey)
         mutex.withLock {
-            val existing = fileFor(seriesKey).takeIf { it.exists() }?.let { read(it) }.orEmpty()
+            val file = fileFor(seriesKey)
+            val previous = file.takeIf { it.exists() }?.let { readFile(it) }
+            val existing = previous?.pairs.orEmpty()
             val merged = LinkedHashMap<String, LearnedPair>()
             pairs.forEach { merged[it.source] = it }
             existing.forEach { merged.putIfAbsent(it.source, it) }
             val kept = merged.values.toList().takeLast(MAX_PAIRS)
             cache[seriesKey] = kept
-            write(seriesKey, kept)
+            write(
+                seriesKey = seriesKey,
+                pairs = kept,
+                sourceId = sourceId ?: previous?.sourceId,
+                sourceName = sourceName ?: previous?.sourceName,
+            )
             kept.size
         }
+    }
+
+    /** Every style a run has left behind, newest file first. The settings screen picks from these. */
+    suspend fun learnedStyles(): List<LearnedStyle> = withContext(Dispatchers.IO) {
+        val dir = File(context.filesDir, DIRECTORY)
+        if (!dir.exists()) return@withContext emptyList()
+        dir.listFiles()
+            .orEmpty()
+            .sortedByDescending { it.lastModified() }
+            .mapNotNull { file ->
+                val content = readFile(file) ?: return@mapNotNull null
+                val id = content.sourceId ?: return@mapNotNull null
+                LearnedStyle(
+                    sourceId = id,
+                    sourceName = content.sourceName.orEmpty(),
+                    pairs = content.pairs.size,
+                )
+            }
     }
 
     suspend fun clear(seriesKey: String) = withContext(Dispatchers.IO) {
@@ -93,14 +133,25 @@ class TranslationMemoryStore(
         }
     }
 
-    private fun read(file: File): List<LearnedPair> = runCatching {
-        json.decodeFromString<MemoryFile>(file.readText()).pairs
-    }.getOrDefault(emptyList())
+    private fun readFile(file: File): MemoryFile? = runCatching {
+        json.decodeFromString<MemoryFile>(file.readText())
+    }.getOrNull()
 
-    private fun write(seriesKey: String, pairs: List<LearnedPair>) {
+    private fun read(file: File): List<LearnedPair> = readFile(file)?.pairs.orEmpty()
+
+    private fun write(
+        seriesKey: String,
+        pairs: List<LearnedPair>,
+        sourceId: Long?,
+        sourceName: String?,
+    ) {
         runCatching {
             val dir = File(context.filesDir, DIRECTORY).apply { mkdirs() }
-            File(dir, "${fileName(seriesKey)}.json").writeText(json.encodeToString(MemoryFile(pairs)))
+            File(dir, "${fileName(seriesKey)}.json").writeText(
+                json.encodeToString(
+                    MemoryFile(pairs = pairs, sourceId = sourceId, sourceName = sourceName),
+                ),
+            )
         }
     }
 
@@ -159,6 +210,11 @@ private const val MAX_NAME_WORDS = 3
  * What a learned memory belongs to: the series itself, not one library entry, so a second copy of the same work from
  * another source reads the same names.
  */
+/**
+ * The key a source-wide style is filed under: a series of its own, so any work can borrow its wording.
+ */
+fun styleKeyOf(sourceId: Long): String = "style:$sourceId"
+
 fun seriesKeyOf(title: String): String = title
     .lowercase()
     .replace(Regex("[\\p{P}\\p{S}]+"), " ")

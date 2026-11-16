@@ -1,12 +1,16 @@
 package eu.kanade.presentation.more.settings.screen
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import eu.kanade.presentation.components.displayName
 import eu.kanade.presentation.more.settings.Preference
+import eu.kanade.tachiyomi.data.translation.LearnedStyle
 import mihon.app.di.appGraph
 import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationLetterCase
@@ -27,6 +31,9 @@ object SettingsTranslationScreen : SearchableSettings {
         val context = LocalContext.current
         val preferences = remember { context.appGraph.translationPreferences }
         val provider by preferences.provider.collectAsState()
+        val memory = remember { context.appGraph.translationMemoryStore }
+        var styles by remember { mutableStateOf<List<LearnedStyle>>(emptyList()) }
+        LaunchedEffect(Unit) { styles = memory.learnedStyles() }
 
         val autoLabel = stringResource(MR.strings.translation_language_auto)
         val languageNames = TranslationLanguage.entries.associateWith { it.displayName() }
@@ -90,6 +97,31 @@ object SettingsTranslationScreen : SearchableSettings {
                             TranslationLetterCase.LOWER to stringResource(MR.strings.translation_case_lower),
                         ),
                         title = stringResource(MR.strings.pref_translation_letter_case),
+                    ),
+                ),
+            ),
+            Preference.PreferenceGroup(
+                title = stringResource(MR.strings.pref_category_translation_style),
+                preferenceItems = listOf(
+                    Preference.PreferenceItem.ListPreference(
+                        preference = preferences.styleSourceId,
+                        entries = buildMap {
+                            put(-1L, stringResource(MR.strings.translation_style_none))
+                            styles.forEach { style ->
+                                put(
+                                    style.sourceId,
+                                    "${style.sourceName.ifBlank { style.sourceId.toString() }} — ${style.pairs}",
+                                )
+                            }
+                        },
+                        title = stringResource(MR.strings.pref_translation_style),
+                        subtitle = stringResource(
+                            if (styles.isEmpty()) {
+                                MR.strings.pref_translation_style_empty
+                            } else {
+                                MR.strings.pref_translation_style_summary
+                            },
+                        ),
                     ),
                 ),
             ),

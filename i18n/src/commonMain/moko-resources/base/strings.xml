@@ -1143,7 +1143,7 @@
     <string name="translation_learn_pick">Pick the translated entry</string>
     <string name="translation_learn_empty">No other library entries to learn from. Add the translated version to your library first.</string>
     <string name="translation_learn_running">Reading chapter %1$d of %2$d… %3$d lines learned</string>
-    <string name="translation_learn_done">Learned %1$d lines from %2$d chapters. The next translations of this series will use them.</string>
+    <string name="translation_learn_done">Learned %1$d lines from %2$d chapters. This series will use them, and the source's style is now available under Settings › Translation › Translation style.</string>
     <string name="translation_learn_failed">Learning failed: %s</string>
     <string name="translation_learn_cancel">Cancel</string>
     <string name="translation_learn_no_key">Learning reads the translated copy by sight, which needs an API key from an AI service: Gemini, OpenAI or Claude. Add one in Settings › Translation.</string>
@@ -1156,6 +1156,11 @@
     <string name="translation_learn_preparing">Preparing…</string>
     <string name="translation_learn_stop">Stop</string>
     <string name="translation_learn_background">This keeps running in the background: you can leave this screen, read something else, or close the app.</string>
+    <string name="pref_category_translation_style">Translation style</string>
+    <string name="pref_translation_style">Follow a source's style</string>
+    <string name="pref_translation_style_summary">Every series is translated with the wording learned from this source.</string>
+    <string name="pref_translation_style_empty">Nothing learned yet. Use “Learn from a translated copy” on any entry to teach a style.</string>
+    <string name="translation_style_none">None — each series uses its own learning</string>
     <string name="pref_category_translation_ocr">Reading the images</string>
     <string name="pref_translation_ocr_quality">Reading quality</string>
     <string name="pref_translation_ocr_quality_summary">Fast reads only the outlines, accurate reads every line. Slow pages are read in less detail.</string>

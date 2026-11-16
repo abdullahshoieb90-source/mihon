@@ -108,6 +108,12 @@ class TranslationPreferences(
         100,
     )
 
+    // The source whose learned style is followed everywhere; -1 means each series uses only its own memory.
+    val styleSourceId: Preference<Long> = preferenceStore.getLong(
+        "pref_translation_style_source",
+        -1L,
+    )
+
     val ocrQuality: Preference<Int> = preferenceStore.getInt(
         "pref_translation_ocr_quality",
         2,

@@ -118,7 +118,15 @@ class PageTranslator(
                 // What a translated copy of this series already settled on for these very lines.
                 val seriesKey = seriesTitle?.takeIf { it.isNotBlank() }?.let { seriesKeyOf(it) }
                     ?: mangaId?.takeIf { it > 0 }?.toString()
-                val hints = if (seriesKey != null) memory.recall(seriesKey, cleaned) else emptyList()
+                val seriesHints = if (seriesKey != null) memory.recall(seriesKey, cleaned) else emptyList()
+                // A style learned from one source is followed in every series the reader opens.
+                val styleSource = preferences.styleSourceId.get()
+                val styleHints = if (styleSource > 0) {
+                    memory.recall(styleKeyOf(styleSource), cleaned)
+                } else {
+                    emptyList()
+                }
+                val hints = (seriesHints + styleHints).distinctBy { it.source }
                 val reference = hints.withNamesApplied(cleaned)
                 val translation = translateAll(reference, effectiveSource, target, hints)
                 val translatedBlocks = blocks.mapIndexedNotNull { index, block ->
