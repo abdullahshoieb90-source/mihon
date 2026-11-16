@@ -1134,8 +1134,8 @@ class ReaderViewModel(
 
     private fun toastTranslationError(error: TranslationException) {
         // Providers answer quota problems with a paragraph of billing links; the reader needs the reason.
-        val detail = error.detail.orEmpty().lowercase()
-        if (QUOTA_MARKERS.any { it in detail }) {
+        val reason = error.detail.orEmpty().lowercase()
+        if (QUOTA_MARKERS.any { it in reason }) {
             context.toast(MR.strings.translation_error_quota)
             return
         }
