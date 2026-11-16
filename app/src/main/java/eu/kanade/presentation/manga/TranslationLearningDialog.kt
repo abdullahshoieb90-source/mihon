@@ -121,7 +121,10 @@ fun TranslationLearningDialog(
         },
         confirmButton = {
             if (learning is TranslationLearningState.Running) {
-                TextButton(onClick = { onStop(); onDismiss() }) {
+                TextButton(onClick = {
+                    onStop()
+                    onDismiss()
+                }) {
                     Text(stringResource(MR.strings.translation_learn_stop))
                 }
             } else {

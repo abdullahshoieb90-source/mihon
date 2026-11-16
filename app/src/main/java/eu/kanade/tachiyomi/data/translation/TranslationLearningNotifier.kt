@@ -32,14 +32,17 @@ class TranslationLearningNotifier(
     }
 
     fun showProgress(chapter: Int, chapters: Int, pairs: Int) {
-        context.notify(Notifications.ID_TRANSLATION_LEARNING, progressBuilder().apply {
-            if (chapters > 0) {
-                setContentText(
-                    context.stringResource(MR.strings.translation_learn_running, chapter, chapters, pairs),
-                )
-                setProgress(chapters, chapter, false)
-            }
-        }.build())
+        context.notify(
+            Notifications.ID_TRANSLATION_LEARNING,
+            progressBuilder().apply {
+                if (chapters > 0) {
+                    setContentText(
+                        context.stringResource(MR.strings.translation_learn_running, chapter, chapters, pairs),
+                    )
+                    setProgress(chapters, chapter, false)
+                }
+            }.build(),
+        )
     }
 
     fun showDone(pairs: Int, chapters: Int) {
