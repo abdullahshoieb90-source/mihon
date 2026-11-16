@@ -32,6 +32,7 @@ import eu.kanade.presentation.manga.EditCoverAction
 import eu.kanade.presentation.manga.MangaScreen
 import eu.kanade.presentation.manga.MangaTranslationDialog
 import eu.kanade.presentation.manga.MangaTranslationUiState
+import eu.kanade.presentation.manga.TranslationLearningDialog
 import eu.kanade.presentation.manga.components.DeleteChaptersDialog
 import eu.kanade.presentation.manga.components.MangaCoverDialog
 import eu.kanade.presentation.manga.components.ScanlatorFilterDialog
@@ -169,6 +170,7 @@ class MangaScreen(
                 showTranslationDialog = true
                 viewModel.translateManga()
             },
+            onLearnTranslationClicked = viewModel::showLearningDialog,
             onMultiBookmarkClicked = viewModel::bookmarkChapters,
             onMultiMarkAsReadClicked = viewModel::markChaptersRead,
             onMarkPreviousAsReadClicked = viewModel::markPreviousChapterRead,
@@ -177,6 +179,14 @@ class MangaScreen(
             onChapterSelected = viewModel::toggleSelection,
             onAllChapterSelected = viewModel::toggleAllSelection,
             onInvertSelection = viewModel::invertSelection,
+        )
+
+        val learning by viewModel.learning.collectAsStateWithLifecycle()
+        TranslationLearningDialog(
+            state = learning,
+            onPick = viewModel::learnFromTranslatedCopy,
+            onStop = viewModel::stopLearning,
+            onDismiss = viewModel::dismissLearningDialog,
         )
 
         var showScanlatorsDialog by remember { mutableStateOf(false) }

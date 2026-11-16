@@ -80,6 +80,12 @@ class TranslationPreferences(
         "claude-3-5-haiku-latest",
     )
 
+    // Keeps the adult tone of mature pages instead of softening it.
+    val explicitContent: Preference<Boolean> = preferenceStore.getBoolean(
+        "pref_translation_explicit_content",
+        false,
+    )
+
     val textColor: Preference<TranslationTextColor> = preferenceStore.getEnum(
         "pref_translation_text_color",
         TranslationTextColor.AUTO,
@@ -95,7 +101,25 @@ class TranslationPreferences(
         TranslationLetterCase.ORIGINAL,
     )
 
-    /** 1 = fast, 2 = balanced, 3 = accurate: how much of the page the recognizer is allowed to read. */
+    // 1 = fast, 2 = balanced, 3 = accurate: how much of the page the recognizer is allowed to read.
+    // Multiplier over the size taken from the original lettering: 100 = match the page, 130 = a third larger.
+    val textScale: Preference<Int> = preferenceStore.getInt(
+        "pref_translation_text_scale",
+        100,
+    )
+
+    // When a paid service runs out of quota or is overloaded, keep the reading going through the free endpoint.
+    val fallbackToGoogle: Preference<Boolean> = preferenceStore.getBoolean(
+        "pref_translation_fallback_google",
+        true,
+    )
+
+    // The source whose learned style is followed everywhere; -1 means each series uses only its own memory.
+    val styleSourceId: Preference<Long> = preferenceStore.getLong(
+        "pref_translation_style_source",
+        -1L,
+    )
+
     val ocrQuality: Preference<Int> = preferenceStore.getInt(
         "pref_translation_ocr_quality",
         2,

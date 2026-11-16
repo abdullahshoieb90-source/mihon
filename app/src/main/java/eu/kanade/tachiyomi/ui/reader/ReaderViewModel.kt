@@ -177,6 +177,13 @@ class ReaderViewModel(
     val translationMode: StateFlow<Boolean> = mutableTranslationMode.asStateFlow()
 
     private val translationJobs = mutableMapOf<Int, Job>()
+
+    // Pages the reader already found nothing to translate on. Webtoons are full of art-only pages, and retrying
+    // them on every scroll only produced a stream of "no text on this page" reports.
+    private val untranslatablePages = mutableSetOf<Int>()
+
+    private var lastErrorToastAt = 0L
+    private var lastErrorToastCode: TranslationError? = null
     private var prefetchJob: Job? = null
     private var prefetchOrigin = -1
 
@@ -973,7 +980,7 @@ class ReaderViewModel(
             mutableTranslationState.value = TranslationState.Loading
             try {
                 mutableTranslationState.value = TranslationState.Success(
-                    pageTranslator.translate(page.index, page.stream),
+                    pageTranslator.translate(page.index, page.stream, mangaId, manga?.title),
                 )
             } catch (e: CancellationException) {
                 throw e
@@ -1009,6 +1016,7 @@ class ReaderViewModel(
             prefetchJob?.cancel()
             prefetchJob = null
             mutableTranslations.value = emptyMap()
+            untranslatablePages.clear()
             context.toast(MR.strings.translation_mode_off)
         }
     }
@@ -1022,6 +1030,7 @@ class ReaderViewModel(
     fun translatePageInline(page: ReaderPage) {
         mutableTranslationMode.value = true
         if (mutableTranslations.value.containsKey(page.index)) return
+        if (page.index in untranslatablePages) return
         if (translationJobs[page.index]?.isActive == true) return
 
         translationJobs[page.index] = viewModelScope.launch {
@@ -1034,14 +1043,20 @@ class ReaderViewModel(
                     } ?: return@launch
                 }
 
-                val translated = pageTranslator.translate(page.index, page.stream)
+                val translated = pageTranslator.translate(page.index, page.stream, mangaId, manga?.title)
+                untranslatablePages.remove(page.index)
                 storeTranslation(page.index, translated)
                 prefetchTranslations(page.index)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: TranslationException) {
                 logcat(LogPriority.ERROR, e)
-                toastTranslationError(e)
+                // An art-only page isn't a failure worth interrupting the reading for; it's simply done.
+                if (e.error == TranslationError.NO_TEXT_FOUND) {
+                    untranslatablePages += page.index
+                } else {
+                    toastTranslationError(e)
+                }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
                 context.toast(
@@ -1104,7 +1119,7 @@ class ReaderViewModel(
                 if (translationJobs.containsKey(next.index)) continue
 
                 try {
-                    val translated = pageTranslator.translate(next.index, next.stream)
+                    val translated = pageTranslator.translate(next.index, next.stream, mangaId, manga?.title)
                     storeTranslation(next.index, translated)
                     done++
                 } catch (e: CancellationException) {
@@ -1118,6 +1133,13 @@ class ReaderViewModel(
     }
 
     private fun toastTranslationError(error: TranslationException) {
+        // Providers answer quota problems with a paragraph of billing links; the reader needs the reason.
+        val reason = error.detail.orEmpty().lowercase()
+        if (QUOTA_MARKERS.any { it in reason }) {
+            context.toast(MR.strings.translation_error_quota)
+            return
+        }
+
         val message = when (error.error) {
             TranslationError.PAGE_NOT_AVAILABLE -> MR.strings.translation_error_page_not_available
             TranslationError.NO_TEXT_FOUND -> MR.strings.translation_error_no_text
@@ -1128,6 +1150,12 @@ class ReaderViewModel(
             TranslationError.PROVIDER_ERROR -> MR.strings.translation_error_provider
             TranslationError.SOURCE_LANGUAGE_REQUIRED -> MR.strings.translation_error_source_required
         }
+        // Scrolling can raise the same complaint page after page; one report is enough.
+        val now = System.currentTimeMillis()
+        if (error.error == lastErrorToastCode && now - lastErrorToastAt < ERROR_TOAST_COOLDOWN_MILLIS) return
+        lastErrorToastCode = error.error
+        lastErrorToastAt = now
+
         val detail = error.detail?.replace("%", "%%").orEmpty()
         context.toast(context.stringResource(message, detail))
     }
@@ -1354,6 +1382,9 @@ class ReaderViewModel(
         const val PREFETCH_RESTART_DISTANCE = 4
         const val PREFETCH_READY_TIMEOUT_MILLIS = 10_000L
         const val PAGE_READY_TIMEOUT_MILLIS = 30_000L
+        const val ERROR_TOAST_COOLDOWN_MILLIS = 8_000L
+
+        private val QUOTA_MARKERS = listOf("exceeded your current quota", "resource_exhausted", "billing", "quota")
     }
 }
 

@@ -37,6 +37,7 @@ import eu.kanade.domain.track.interactor.TrackChapter
 import eu.kanade.domain.track.model.AutoTrackState
 import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.presentation.manga.DownloadAction
+import eu.kanade.presentation.manga.TranslationLearningUiState
 import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.data.cache.CoverCache
@@ -47,6 +48,9 @@ import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.translation.TranslationError
 import eu.kanade.tachiyomi.data.translation.TranslationException
+import eu.kanade.tachiyomi.data.translation.TranslationLearningState
+import eu.kanade.tachiyomi.data.translation.TranslationLearningWorker
+import eu.kanade.tachiyomi.data.translation.TranslationMemoryLearner
 import eu.kanade.tachiyomi.data.translation.Translator
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
@@ -103,6 +107,7 @@ import tachiyomi.domain.chapter.service.getChapterSort
 import tachiyomi.domain.chapter.service.missingChaptersCount
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
+import tachiyomi.domain.manga.interactor.GetLibraryManga
 import tachiyomi.domain.manga.interactor.GetMangaWithChapters
 import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.model.Manga
@@ -151,6 +156,8 @@ class MangaViewModel(
     private val refreshTracks: RefreshTracks,
     private val coverCache: CoverCache,
     private val translator: Translator,
+    private val getLibraryManga: GetLibraryManga,
+    private val translationMemoryLearner: TranslationMemoryLearner,
 ) : ViewModel() {
 
     private val subscriberGate = SubscriberGate()
@@ -200,6 +207,9 @@ class MangaViewModel(
     val mangaTranslation = mutableMangaTranslation.asStateFlow()
 
     private var translationJob: Job? = null
+
+    private val mutableLearning = MutableStateFlow(TranslationLearningUiState())
+    val learning = mutableLearning.asStateFlow()
 
     private val isRefreshingData = MutableStateFlow(false)
 
@@ -1130,10 +1140,63 @@ class MangaViewModel(
         }
     }
 
+    fun showLearningDialog() {
+        val current = manga ?: return
+        // A finished run belongs to the past; the picker starts fresh, while a running one keeps its progress.
+        if (translationMemoryLearner.state.value !is TranslationLearningState.Running) {
+            translationMemoryLearner.reset()
+        }
+        viewModelScope.launch {
+            val candidates = getLibraryManga.await()
+                .filter { it.id != current.id }
+                .sortedByDescending { titleScore(it.manga.title, current.title) }
+                .map { it.id to it.manga.title }
+                .take(MAX_LEARNING_CANDIDATES)
+            mutableLearning.value = TranslationLearningUiState(visible = true, candidates = candidates)
+        }
+    }
+
+    /**
+     * Learning runs as background work, so closing the screen, reading something else or leaving the app keeps it
+     * going. The dialog only watches it.
+     */
+    fun learnFromTranslatedCopy(translatedMangaId: Long) {
+        val current = manga ?: return
+        TranslationLearningWorker.start(context, current.id, translatedMangaId)
+    }
+
+    fun stopLearning() {
+        TranslationLearningWorker.cancel(context)
+        translationMemoryLearner.reset()
+        mutableLearning.value = TranslationLearningUiState()
+    }
+
+    fun dismissLearningDialog() {
+        translationMemoryLearner.reset()
+        mutableLearning.value = TranslationLearningUiState()
+    }
+
+    /** Titles of the same work differ by a word or a language, so the library is ranked by shared words. */
+    private fun titleScore(candidate: String, current: String): Int {
+        val words = current.lowercase().split(' ', '-', ':', '(', ')', '，', ',')
+            .map { it.trim() }
+            .filter { it.length >= 3 }
+            .toSet()
+        return words.count { candidate.lowercase().contains(it) }
+    }
+
     fun dismissMangaTranslation() {
         translationJob?.cancel()
         translationJob = null
         mutableMangaTranslation.value = MangaTranslationState.Idle
+    }
+
+    init {
+        viewModelScope.launch {
+            translationMemoryLearner.state.collect { state ->
+                mutableLearning.update { it.copy(learning = state) }
+            }
+        }
     }
 
     fun showSettingsDialog() {
@@ -1267,6 +1330,8 @@ class MangaViewModel(
         }
     }
 }
+
+private const val MAX_LEARNING_CANDIDATES = 40
 
 @Immutable
 sealed class ChapterList {

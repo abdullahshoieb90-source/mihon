@@ -25,6 +25,8 @@ data class TranslatedTextBlock(
     val box: Rect,
     val original: String,
     val translated: String,
+    /** How many lines of the original lettering the box held, which is how its font size is estimated. */
+    val lines: Int = 1,
 )
 
 /**
@@ -51,11 +53,14 @@ class PageTranslator(
     private val translator: Translator,
     private val ocrEngine: OcrEngine,
     private val preferences: TranslationPreferences,
+    private val memory: TranslationMemoryStore,
 ) {
 
     suspend fun translate(
         pageIndex: Int,
         openStream: (() -> InputStream)?,
+        mangaId: Long? = null,
+        seriesTitle: String? = null,
     ): TranslatedPage = withContext(Dispatchers.IO) {
         val open = openStream ?: throw TranslationException(TranslationError.PAGE_NOT_AVAILABLE)
         val source = translator.sourceLanguage
@@ -89,8 +94,11 @@ class PageTranslator(
                 // Dots of an ellipsis, page numbers and sound effects are recognized as "0000" or "…" all the
                 // time; translating those only paints boxes over the art.
                 val recognition = recognize(decoder, nativeWidth, nativeHeight, source)
-                val blocks = recognition.blocks
-                    .filter { it.text.count { char -> char.isLetter() } >= MIN_LETTERS }
+                val blocks = mergeBubbles(
+                    recognition.blocks
+                        .filter { it.text.count { char -> char.isLetter() } >= MIN_LETTERS }
+                        .filterNot { it.text.isSoundEffect() },
+                )
                 if (blocks.isEmpty()) throw TranslationException(TranslationError.NO_TEXT_FOUND)
 
                 // Text positions are read at the OCR scale and have to be drawn on the displayed bitmap.
@@ -107,7 +115,20 @@ class PageTranslator(
                 } else {
                     source
                 }
-                val translation = translateAll(cleaned, effectiveSource, target)
+                // What a translated copy of this series already settled on for these very lines.
+                val seriesKey = seriesTitle?.takeIf { it.isNotBlank() }?.let { seriesKeyOf(it) }
+                    ?: mangaId?.takeIf { it > 0 }?.toString()
+                val seriesHints = if (seriesKey != null) memory.recall(seriesKey, cleaned) else emptyList()
+                // A style learned from one source is followed in every series the reader opens.
+                val styleSource = preferences.styleSourceId.get()
+                val styleHints = if (styleSource > 0) {
+                    memory.recall(styleKeyOf(styleSource), cleaned)
+                } else {
+                    emptyList()
+                }
+                val hints = (seriesHints + styleHints).distinctBy { it.source }
+                val reference = hints.withNamesApplied(cleaned)
+                val translation = translateAll(reference, effectiveSource, target, hints)
                 val translatedBlocks = blocks.mapIndexedNotNull { index, block ->
                     val translated = translation.getOrNull(index)?.trim()
                     val hasLetters = translated != null && translated.any { it.isLetter() }
@@ -118,6 +139,7 @@ class PageTranslator(
                             box = block.box.scaled(ratio),
                             original = cleaned[index],
                             translated = translated,
+                            lines = block.lines,
                         )
                     }
                 }
@@ -179,29 +201,142 @@ class PageTranslator(
         return BitmapFactory.decodeFile(file.absolutePath, options)
     }
 
+    /**
+     * A speech bubble is recognized line by line, and translating every line on its own produced half-covered bubbles
+     * and sentences without their beginning. Neighbouring lines of the same bubble are joined into one block, which
+     * the translator then sees as a whole and which is painted over as a whole.
+     */
+    private fun mergeBubbles(blocks: List<OcrBlock>): List<Bubble> {
+        if (blocks.size < 2) return blocks.map { Bubble(it.text, it.box, 1) }
+
+        val parent = IntArray(blocks.size) { it }
+        fun find(index: Int): Int {
+            var current = index
+            while (parent[current] != current) {
+                parent[current] = parent[parent[current]]
+                current = parent[current]
+            }
+            return current
+        }
+
+        for (first in blocks.indices) {
+            for (second in first + 1 until blocks.size) {
+                if (belongTogether(blocks[first].box, blocks[second].box)) {
+                    val a = find(first)
+                    val b = find(second)
+                    if (a != b) parent[b] = a
+                }
+            }
+        }
+
+        return blocks.indices
+            .groupBy { find(it) }
+            .values
+            .map { indices ->
+                val parts = indices.map { blocks[it] }.sortedWith(compareBy({ it.box.top }, { it.box.left }))
+                val box = Rect(parts.first().box)
+                parts.drop(1).forEach { box.union(it.box) }
+                Bubble(
+                    text = parts.joinToString(separator = " ") { it.text.trim() },
+                    box = box,
+                    lines = parts.size,
+                )
+            }
+    }
+
+    /** One speech bubble's lettering: its lines joined into a sentence, and the area they cover. */
+    private data class Bubble(
+        val text: String,
+        val box: Rect,
+        val lines: Int,
+    )
+
+    /**
+     * Two pieces of lettering belong to the same bubble when they stack on top of each other with a small gap, or sit
+     * side by side on the same line. A bubble that holds two sentences ("A-ANYWAY!" above a longer line) has to be
+     * read as one, otherwise one half stays in the original language.
+     */
+    private fun belongTogether(a: Rect, b: Rect): Boolean {
+        val horizontalOverlap = min(a.right, b.right) - max(a.left, b.left)
+        val narrower = min(a.width(), b.width()).coerceAtLeast(1)
+        val overlapRatio = horizontalOverlap.toFloat() / narrower
+
+        val verticalGap = max(a.top, b.top) - min(a.bottom, b.bottom)
+        val lineHeight = min(a.height(), b.height()).coerceAtLeast(1)
+
+        // Stacked: the lines of one bubble, even when a wide line follows a short one.
+        if (verticalGap <= lineHeight * SAME_BUBBLE_GAP && overlapRatio >= 0.12f) return true
+
+        // Side by side on the same line: one sentence split by the recognizer.
+        val horizontalGap = max(a.left, b.left) - min(a.right, b.right)
+        return horizontalGap <= lineHeight * SAME_BUBBLE_GAP && max(a.top, b.top) - min(a.bottom, b.bottom) <= 0
+    }
+
     private suspend fun recognize(
         decoder: BitmapRegionDecoder,
         nativeWidth: Int,
         nativeHeight: Int,
         source: TranslationLanguage,
     ): Recognition {
-        val script = source.ocrScript ?: run {
+        val primary = source.ocrScript ?: run {
             if (source != TranslationLanguage.AUTO) {
                 throw TranslationException(TranslationError.UNSUPPORTED_SOURCE_SCRIPT)
             }
             detectScript(decoder, nativeWidth, nativeHeight)
         }
 
+        var script = primary
+        val sampleSize = ocrSampleSize(nativeWidth)
+        var blocks = readPage(decoder, nativeWidth, nativeHeight, script, sampleSize)
+
+        // A page can mix scripts (Japanese sound effects on an English page, English signage on a Japanese one),
+        // and a wrong guess reads nothing at all. The other common model gets a pass too and its findings are
+        // folded in wherever the first pass had nothing.
+        if (source == TranslationLanguage.AUTO) {
+            val secondary = if (script == OcrScript.LATIN) OcrScript.JAPANESE else OcrScript.LATIN
+            val extra = readPage(decoder, nativeWidth, nativeHeight, secondary, sampleSize)
+            if (blocks.size < MIN_BLOCKS_BEFORE_RETRY || extra.isNotEmpty()) {
+                blocks = mergeReadings(blocks, extra)
+            }
+            // Still nothing usable: the guess itself was wrong, so the remaining models are tried in turn.
+            if (blocks.size < MIN_BLOCKS_BEFORE_RETRY) {
+                for (candidate in OcrScript.entries) {
+                    if (candidate == script || candidate == secondary) continue
+                    val attempt = readPage(decoder, nativeWidth, nativeHeight, candidate, sampleSize)
+                    if (attempt.size > blocks.size) {
+                        blocks = attempt
+                        script = candidate
+                    }
+                    if (blocks.size >= MIN_BLOCKS_BEFORE_RETRY) break
+                }
+            }
+        }
+
+        blocks = enrichSparseBlocks(blocks, decoder, script, nativeWidth, nativeHeight, sampleSize)
+
+        return Recognition(blocks, script)
+    }
+
+    private fun ocrSampleSize(nativeWidth: Int): Int {
         val wantedWidth = when (preferences.ocrQuality.get()) {
             1 -> TranslationPreferences.OCR_FAST_WIDTH
             3 -> TranslationPreferences.OCR_ACCURATE_WIDTH
             else -> TranslationPreferences.OCR_BALANCED_WIDTH
         }
-        val sampleSize = max(1, ceil(nativeWidth / wantedWidth.toFloat()).toInt())
+        return max(1, ceil(nativeWidth / wantedWidth.toFloat()).toInt())
+    }
+
+    private suspend fun readPage(
+        decoder: BitmapRegionDecoder,
+        nativeWidth: Int,
+        nativeHeight: Int,
+        script: OcrScript,
+        sampleSize: Int,
+    ): List<OcrBlock> {
         val width = nativeWidth / sampleSize
         val height = nativeHeight / sampleSize
 
-        val blocks = ocrEngine.recognizeTiles(width, height, script) { tile ->
+        return ocrEngine.recognizeTiles(width, height, script) { tile ->
             val region = Rect(
                 tile.left * sampleSize,
                 tile.top * sampleSize,
@@ -214,7 +349,81 @@ class PageTranslator(
             }
             decoder.decodeRegion(region, options)?.let { OcrTile(it, release = true) }
         }
-        return Recognition(blocks, script)
+    }
+
+    /**
+     * Keeps the first reading and adds whatever the second script found in places the first one left empty.
+     */
+    private fun mergeReadings(primary: List<OcrBlock>, extra: List<OcrBlock>): List<OcrBlock> {
+        if (extra.isEmpty()) return primary
+        val merged = primary.toMutableList()
+        extra.forEach { candidate ->
+            val overlaps = merged.any { existing -> overlapRatio(existing.box, candidate.box) >= 0.3f }
+            if (!overlaps) merged += candidate
+        }
+        return merged.sortedWith(compareBy({ it.box.top }, { it.box.left }))
+    }
+
+    private fun overlapRatio(a: Rect, b: Rect): Float {
+        val left = max(a.left, b.left)
+        val top = max(a.top, b.top)
+        val right = min(a.right, b.right)
+        val bottom = min(a.bottom, b.bottom)
+        if (right <= left || bottom <= top) return 0f
+        val inter = (right - left).toLong() * (bottom - top)
+        val smaller = min(a.width().toLong() * a.height(), b.width().toLong() * b.height()).coerceAtLeast(1)
+        return inter.toFloat() / smaller
+    }
+
+    /**
+     * A big bubble that came back with a word or two was read while something crossed it (a spiky border, a hand,
+     * another line of art). Those boxes are read again at native resolution, and the richer reading wins.
+     */
+    private suspend fun enrichSparseBlocks(
+        blocks: List<OcrBlock>,
+        decoder: BitmapRegionDecoder,
+        script: OcrScript,
+        nativeWidth: Int,
+        nativeHeight: Int,
+        sampleSize: Int,
+    ): List<OcrBlock> {
+        if (blocks.size < 2) return blocks
+
+        val areas = blocks.map { it.box.width().toLong() * it.box.height() }.sorted()
+        val median = areas[areas.size / 2]
+        if (median <= 0) return blocks
+
+        val suspects = blocks
+            .filter { it.text.length <= SPARSE_TEXT_LENGTH && it.box.width().toLong() * it.box.height() > median * 3 }
+            .sortedByDescending { it.box.width().toLong() * it.box.height() }
+            .take(MAX_ENRICHED_BLOCKS)
+
+        if (suspects.isEmpty()) return blocks
+
+        return blocks.map { block ->
+            if (suspects.none { it === block }) return@map block
+
+            val region = Rect(
+                (block.box.left * sampleSize).coerceIn(0, nativeWidth - 1),
+                (block.box.top * sampleSize).coerceIn(0, nativeHeight - 1),
+                (block.box.right * sampleSize).coerceIn(1, nativeWidth),
+                (block.box.bottom * sampleSize).coerceIn(1, nativeHeight),
+            )
+            if (region.width() < 8 || region.height() < 8) return@map block
+
+            val bitmap = runCatching {
+                decoder.decodeRegion(region, BitmapFactory.Options().apply { inScaled = false })
+            }.getOrNull() ?: return@map block
+
+            try {
+                val better = ocrEngine.recognize(bitmap, script)
+                    .joinToString(separator = " ") { it.text }
+                    .trim()
+                if (better.length > block.text.length) OcrBlock(better, block.box) else block
+            } finally {
+                bitmap.recycle()
+            }
+        }
     }
 
     /**
@@ -274,17 +483,19 @@ class PageTranslator(
         texts: List<String>,
         source: TranslationLanguage,
         target: TranslationLanguage,
+        hints: List<LearnedPair> = emptyList(),
     ): List<String?> {
         return try {
-            translator.translate(texts, source, target)
+            translator.translate(texts, source, target, hints)
         } catch (e: TranslationException) {
             if (texts.size <= 1) throw e
 
             // If the first block fails as well the provider is unreachable, so there's nothing to salvage.
-            val first = runCatching { translator.translate(listOf(texts.first()), source, target).first() }
-                .getOrElse { throw e }
+            val first = runCatching {
+                translator.translate(listOf(texts.first()), source, target, hints).first()
+            }.getOrElse { throw e }
             listOf(first) + texts.drop(1).map { text ->
-                runCatching { translator.translate(listOf(text), source, target).first() }.getOrNull()
+                runCatching { translator.translate(listOf(text), source, target, hints).first() }.getOrNull()
             }
         }
     }
@@ -294,9 +505,29 @@ class PageTranslator(
      * into broken sentences.
      */
     private fun String.normalizeForTranslation(): String = this
+        // Control characters and the box-drawing bars the recognizer likes to add around lettering.
+        .replace(Regex("[\\u0000-\\u001F\\u007F]"), " ")
+        .replace(Regex("[\\u2500-\\u257F|｜│¦_~^`]+"), " ")
         .replace(Regex("\\s+"), " ")
-        .replace(Regex("\\.{2,}|…+"), "…")
-        .trim()
+        .replace(Regex("\\.{2,}|…{2,}"), "…")
+        .replace(Regex("([!?！？])\\1+"), "$1")
+        .trim(' ', '-', '_', '.', ',', '·', '|', '~', '…', '「', '」', '『', '』')
+
+    /**
+     * Sound effects are drawn in fat capitals ("GUD", "STEP") and translating them only paints nonsense over the art.
+     * Dialogue never looks like that, so short all-capital Latin blocks are left alone.
+     */
+    private fun String.isSoundEffect(): Boolean {
+        val letters = filter { it.isLetter() }
+        if (letters.length !in 3..6) return false
+        if (letters.any { it.code > 0x2FF }) return false
+        // Lettering drawn over the art has no punctuation; "WHAT?" and "NO!" are short lines of dialogue that a
+        // reader still needs translated.
+        if (any { it in "?!.,…،؟" }) return false
+        // "HAA…", "NO", "AH" are moans and shouts from the dialogue, not drawing.
+        if (letters.lowercase() in DIALOGUE_SHOUTS) return false
+        return letters.all { it.isUpperCase() }
+    }
 
     /** The language a script is normally written in, used when the reader left the source on automatic. */
     private fun OcrScript.defaultLanguage(): TranslationLanguage = when (this) {
@@ -325,8 +556,23 @@ class PageTranslator(
         /** Blocks with fewer letters are ellipsis dots, page numbers or noise, not dialogue. */
         private const val MIN_LETTERS = 2
 
+        private val DIALOGUE_SHOUTS = setOf(
+            "ah", "ahh", "aah", "ha", "haa", "hah", "oh", "ooh", "no", "yes", "hm", "hmm", "mm", "uh", "eh",
+            "hey", "ow", "ouch", "wow", "gah", "gya", "kya", "nya", "ugh", "argh",
+        )
+
         private const val DISPLAY_PIXEL_BUDGET = 8_000_000L
         private const val PREVIEW_WIDTH = 160
+
+        /** Fewer readable blocks than this usually means the wrong script was guessed. */
+        private const val MIN_BLOCKS_BEFORE_RETRY = 3
+
+        /** A block with this little text inside a box three times the median is a failed reading. */
+        private const val SPARSE_TEXT_LENGTH = 12
+        private const val MAX_ENRICHED_BLOCKS = 3
+
+        /** How many line heights apart two lines may sit and still count as one bubble. */
+        private const val SAME_BUBBLE_GAP = 1.2f
         private const val DETECTION_SLICE_HEIGHT = 900
         private const val DETECTION_WIDTH = 720
     }

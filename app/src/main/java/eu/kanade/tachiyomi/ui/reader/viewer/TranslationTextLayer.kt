@@ -85,10 +85,14 @@ class TranslationTextLayer(context: Context) : View(context) {
         if (placed.isEmpty()) return
 
         // One letter size for the whole page: sizing every bubble on its own made neighbouring bubbles look like
-        // different readers had pasted them in.
-        val heights = placed.map { it.second.height() }.sorted()
-        val reference = heights[(heights.size - 1) * 3 / 5]
-        val baseTextSize = (reference / TEXT_HEIGHT_DIVISOR)
+        // different readers had pasted them in. The size comes from a line of the original lettering, so the
+        // translation sits at the weight of the page instead of shrinking into unreadable small print.
+        val lineHeights = placed
+            .map { (block, box) -> box.height() / block.lines.coerceAtLeast(1) }
+            .sorted()
+        val reference = lineHeights[(lineHeights.size - 1) * 3 / 5]
+        val scale = preferences.textScale.get() / 100f
+        val baseTextSize = (reference * LINE_TO_TEXT_RATIO * scale)
             .coerceIn(MIN_TEXT_SIZE_DP * density, MAX_TEXT_SIZE_DP * density)
 
         placed.forEach { (block, box) ->
@@ -163,11 +167,14 @@ class TranslationTextLayer(context: Context) : View(context) {
         val top = centerY - coverHeight / 2f
 
         val chosenColor = TranslationTextColor.of(preferences.textColor.get())
-        // A fixed colour still needs a readable plate, so the plate follows the chosen lettering brightness.
-        val light = chosenColor?.let { isLightColor(it) } ?: lightCache.getOrPut(block) {
-            isLightAround(preview, previewScale, block.box)
+        // Without a fixed colour the plate follows the page: a white bubble gets a white plate and black lettering.
+        // With one, the plate has to be the opposite of the lettering or the text disappears into it.
+        val plateIsLight = if (chosenColor != null) {
+            !isLightColor(chosenColor)
+        } else {
+            lightCache.getOrPut(block) { isLightAround(preview, previewScale, block.box) }
         }
-        erasePaint.color = if (light) Color.WHITE else Color.rgb(14, 14, 14)
+        erasePaint.color = if (plateIsLight) Color.WHITE else Color.rgb(14, 14, 14)
         val corner = 2f * density
         canvas.save()
         canvas.clipRect(left, top, left + coverWidth, top + coverHeight)
@@ -181,7 +188,7 @@ class TranslationTextLayer(context: Context) : View(context) {
             erasePaint,
         )
 
-        textPaint.color = chosenColor ?: if (light) Color.BLACK else Color.WHITE
+        textPaint.color = chosenColor ?: if (plateIsLight) Color.BLACK else Color.WHITE
         canvas.translate(centerX, top + (coverHeight - textHeight) / 2f)
         layout.draw(canvas)
         canvas.restore()
@@ -233,11 +240,11 @@ class TranslationTextLayer(context: Context) : View(context) {
     }
 
     companion object {
-        private const val MIN_TEXT_SIZE_DP = 6f
+        private const val MIN_TEXT_SIZE_DP = 9f
         private const val MAX_TEXT_SIZE_DP = 28f
-        private const val TEXT_HEIGHT_DIVISOR = 3.2f
-        private const val MAX_GROWTH = 1.25f
-        private const val MAX_WIDTH_GROWTH = 1.06f
+        private const val LINE_TO_TEXT_RATIO = 0.72f
+        private const val MAX_GROWTH = 1.5f
+        private const val MAX_WIDTH_GROWTH = 1.12f
         private const val LUMA_THRESHOLD = 128.0
     }
 }

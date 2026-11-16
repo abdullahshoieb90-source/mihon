@@ -1,17 +1,21 @@
 package eu.kanade.tachiyomi.data.translation
 
+import android.util.Base64
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
@@ -30,6 +34,8 @@ import java.util.Locale
  * pronouns, the names and the tone consistent, which is where the free endpoints fall apart on Japanese and
  * Korean dialogue.
  */
+private const val MAX_HINT_LINES = 12
+
 class AiTranslationService(
     private val networkHelper: NetworkHelper,
     private val preferences: TranslationPreferences,
@@ -39,6 +45,17 @@ class AiTranslationService(
         texts: List<String>,
         source: TranslationLanguage,
         target: TranslationLanguage,
+    ): List<String> = translate(texts, source, target, emptyList())
+
+    /**
+     * [hints] are lines a translated copy of the same series already rendered, so the model can reuse those names
+     * and turns of phrase instead of inventing its own.
+     */
+    suspend fun translate(
+        texts: List<String>,
+        source: TranslationLanguage,
+        target: TranslationLanguage,
+        hints: List<LearnedPair>,
     ): List<String> {
         if (texts.isEmpty()) return emptyList()
 
@@ -46,7 +63,7 @@ class AiTranslationService(
         val key = apiKey(backend)
         if (key.isBlank()) throw TranslationException(TranslationError.MISSING_API_KEY)
         val model = model(backend)
-        val language = languageInstruction(source, target)
+        val language = languageInstruction(source, target) + referenceInstruction(hints)
 
         val answer = try {
             requestBatch(backend, key, model, language, texts)
@@ -239,13 +256,235 @@ class AiTranslationService(
         AiBackend.CLAUDE -> preferences.claudeModel.get().ifBlank { DEFAULT_CLAUDE_MODEL }
     }.trim()
 
+    /**
+     * Reads the same page twice over — the original art and its human translation — and answers with the text of each
+     * bubble in both languages.
+     *
+     * The translated copy is a picture, and no on-device recognizer reads Arabic lettering, so a model that can see
+     * gets asked instead. Pairing the two versions by eye is also more reliable than matching bubble boxes.
+     */
+    suspend fun readTranslatedPage(
+        rawImage: ByteArray,
+        translatedImage: ByteArray,
+    ): List<LearnedPair> {
+        val withKeys = VISION_BACKENDS.filter { apiKey(it).isNotBlank() }
+        val preferred = runCatching { backendFor(preferences.provider.get()) }.getOrNull()
+        val backends = withKeys.sortedByDescending { it == preferred }
+        if (backends.isEmpty()) throw TranslationException(TranslationError.MISSING_API_KEY)
+
+        var failure: TranslationException? = null
+        for (backend in backends) {
+            val key = apiKey(backend)
+            for (model in visionModels(backend)) {
+                for (attempt in 0 until VISION_ATTEMPTS) {
+                    if (attempt > 0) delay(VISION_RETRY_DELAY_MILLIS * attempt)
+                    val result = runCatching { requestPageReading(backend, key, model, rawImage, translatedImage) }
+                    result.getOrNull()?.let { return it }
+                    val error = result.exceptionOrNull()
+                    failure = error as? TranslationException
+                        ?: TranslationException(TranslationError.PROVIDER_ERROR, error?.message)
+                    // A rejected key won't fix itself by asking again.
+                    if (failure?.error != TranslationError.PROVIDER_ERROR) throw failure!!
+                    // An overloaded model is worth retrying; anything else moves on to the next model.
+                    if (!isTemporary(failure?.detail)) break
+                }
+            }
+        }
+        throw failure ?: TranslationException(TranslationError.PROVIDER_ERROR, "No AI service answered")
+    }
+
+    /** Models get overloaded one at a time, so a second one is worth a try before giving up. */
+    private fun visionModels(backend: AiBackend): List<String> = when (backend) {
+        AiBackend.GEMINI -> listOf(model(backend), *GEMINI_FALLBACK_MODELS.toTypedArray()).distinct()
+        AiBackend.OPENAI -> listOf(model(backend))
+        AiBackend.CLAUDE -> listOf(model(backend))
+    }
+
+    private fun isTemporary(detail: String?): Boolean {
+        val text = detail?.lowercase().orEmpty()
+        return TEMPORARY_MARKERS.any { it in text }
+    }
+
+    private suspend fun requestPageReading(
+        backend: AiBackend,
+        key: String,
+        model: String,
+        rawImage: ByteArray,
+        translatedImage: ByteArray,
+    ): List<LearnedPair> {
+        val request = when (backend) {
+            AiBackend.GEMINI -> geminiVisionRequest(key, model, PAGE_READING_INSTRUCTION, rawImage, translatedImage)
+            AiBackend.OPENAI -> openAiVisionRequest(key, model, PAGE_READING_INSTRUCTION, rawImage, translatedImage)
+            AiBackend.CLAUDE -> claudeVisionRequest(key, model, PAGE_READING_INSTRUCTION, rawImage, translatedImage)
+        }
+        val body = networkHelper.client.executeForBody(request)
+        val answer = when (backend) {
+            AiBackend.GEMINI -> body.jsonPath("candidates", 0, "content", "parts", 0, "text")
+            AiBackend.OPENAI -> body.jsonPath("choices", 0, "message", "content")
+            AiBackend.CLAUDE -> body.jsonPath("content", 0, "text")
+        } ?: throw TranslationException(TranslationError.PROVIDER_ERROR, "Unexpected response from $backend")
+        return parsePairs(answer)
+    }
+
+    private fun geminiVisionRequest(
+        key: String,
+        model: String,
+        instruction: String,
+        raw: ByteArray,
+        translated: ByteArray,
+    ): Request {
+        val body = buildJsonObject {
+            putJsonArray("contents") {
+                addJsonObject {
+                    putJsonArray("parts") {
+                        addJsonObject { put("text", instruction) }
+                        addJsonObject { putBase64Image("inline_data", raw) }
+                        addJsonObject { putBase64Image("inline_data", translated) }
+                    }
+                }
+            }
+            putJsonObject("generationConfig") { put("temperature", 0.1) }
+        }
+        return Request.Builder()
+            .url("$GEMINI_ENDPOINT/models/$model:generateContent")
+            .header("x-goog-api-key", key)
+            .header("Content-Type", JSON)
+            .post(body.toString().toRequestBody(JSON_MEDIA))
+            .build()
+    }
+
+    private fun openAiVisionRequest(
+        key: String,
+        model: String,
+        instruction: String,
+        raw: ByteArray,
+        translated: ByteArray,
+    ): Request {
+        val body = buildJsonObject {
+            put("model", model)
+            put("temperature", 0.1)
+            putJsonArray("messages") {
+                addJsonObject {
+                    put("role", "user")
+                    putJsonArray("content") {
+                        addJsonObject {
+                            put("type", "text")
+                            put("text", instruction)
+                        }
+                        addJsonObject {
+                            put("type", "image_url")
+                            putJsonObject("image_url") { put("url", dataUrl(raw)) }
+                        }
+                        addJsonObject {
+                            put("type", "image_url")
+                            putJsonObject("image_url") { put("url", dataUrl(translated)) }
+                        }
+                    }
+                }
+            }
+        }
+        return Request.Builder()
+            .url("$OPENAI_ENDPOINT/chat/completions")
+            .header("Authorization", "Bearer $key")
+            .header("Content-Type", JSON)
+            .post(body.toString().toRequestBody(JSON_MEDIA))
+            .build()
+    }
+
+    private fun claudeVisionRequest(
+        key: String,
+        model: String,
+        instruction: String,
+        raw: ByteArray,
+        translated: ByteArray,
+    ): Request {
+        val body = buildJsonObject {
+            put("model", model)
+            put("max_tokens", 4096)
+            put("temperature", 0.1)
+            putJsonArray("messages") {
+                addJsonObject {
+                    put("role", "user")
+                    putJsonArray("content") {
+                        addJsonObject {
+                            put("type", "text")
+                            put("text", instruction)
+                        }
+                        addJsonObject {
+                            put("type", "image")
+                            putJsonObject("source") { putClaudeImage(raw) }
+                        }
+                        addJsonObject {
+                            put("type", "image")
+                            putJsonObject("source") { putClaudeImage(translated) }
+                        }
+                    }
+                }
+            }
+        }
+        return Request.Builder()
+            .url("$CLAUDE_ENDPOINT/messages")
+            .header("x-api-key", key)
+            .header("anthropic-version", "2023-06-01")
+            .header("Content-Type", JSON)
+            .post(body.toString().toRequestBody(JSON_MEDIA))
+            .build()
+    }
+
+    private fun JsonObjectBuilder.putBase64Image(field: String, bytes: ByteArray) {
+        put("mime_type", "image/jpeg")
+        put(field, Base64.encodeToString(bytes, Base64.NO_WRAP))
+    }
+
+    private fun JsonObjectBuilder.putClaudeImage(bytes: ByteArray) {
+        put("type", "base64")
+        put("media_type", "image/jpeg")
+        put("data", Base64.encodeToString(bytes, Base64.NO_WRAP))
+    }
+
+    private fun dataUrl(bytes: ByteArray): String =
+        "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP)
+
+    private fun parsePairs(answer: String): List<LearnedPair> {
+        val start = answer.indexOf('[')
+        val end = answer.lastIndexOf(']')
+        if (start < 0 || end <= start) return emptyList()
+        val array = runCatching { Json.Default.parseToJsonElement(answer.substring(start, end + 1)) }
+            .getOrNull() as? JsonArray ?: return emptyList()
+
+        return array.mapNotNull { element ->
+            val item = element as? JsonObject ?: return@mapNotNull null
+            val source = item["original"]?.jsonPrimitive?.content?.trim().orEmpty()
+            val target = item["arabic"]?.jsonPrimitive?.content?.trim().orEmpty()
+            if (source.length < 2 || target.length < 2) null else LearnedPair(source, target)
+        }
+    }
+
+    private fun referenceInstruction(hints: List<LearnedPair>): String {
+        if (hints.isEmpty()) return ""
+        val examples = hints
+            .filter { it.source.isNotBlank() && it.target.isNotBlank() }
+            .take(MAX_HINT_LINES)
+            .joinToString(separator = "\n") { "${it.source}  =>  ${it.target}" }
+            .ifBlank { return "" }
+
+        return " The series is already translated elsewhere; keep its wording for these established lines and reuse " +
+            "the names and terms it chose, even when the raw text spells them differently:\n$examples"
+    }
+
     private fun languageInstruction(source: TranslationLanguage, target: TranslationLanguage): String {
         val from = if (source == TranslationLanguage.AUTO) {
             "the language it is written in"
         } else {
             source.localeName()
         }
-        return "Translate from $from to ${target.localeName()}."
+        val maturity = if (preferences.explicitContent.get()) {
+            " The source is an adult comic: keep the explicit wording and tone exactly, translate sexual language " +
+                "literally and never soften, censor, summarise or leave anything untranslated."
+        } else {
+            ""
+        }
+        return "Translate from $from to ${target.localeName()}.$maturity"
     }
 
     private fun TranslationLanguage.localeName(): String {
@@ -256,6 +495,32 @@ class AiTranslationService(
     private enum class AiBackend { OPENAI, GEMINI, CLAUDE }
 
     companion object {
+        private val VISION_BACKENDS = listOf(AiBackend.GEMINI, AiBackend.OPENAI, AiBackend.CLAUDE)
+
+        private const val PAGE_READING_INSTRUCTION =
+            "The first image is a comic page in its original language. The second image is the same page translated " +
+                "by a human. Read both and answer with only a JSON array. Each entry is an object with \"original\" " +
+                "(the text of one speech bubble in the first image) and \"arabic\" (the same bubble in the second " +
+                "image). Skip sound effects and anything drawn over the art. Keep the original wording exactly."
+
+        private const val VISION_ATTEMPTS = 2
+        private const val VISION_RETRY_DELAY_MILLIS = 2500L
+
+        private val GEMINI_FALLBACK_MODELS = listOf("gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest")
+
+        private val TEMPORARY_MARKERS = listOf(
+            "high demand",
+            "overloaded",
+            "unavailable",
+            "rate limit",
+            "resource_exhausted",
+            "try again",
+            "timeout",
+            "429",
+            "500",
+            "503",
+        )
+
         private const val OPENAI_ENDPOINT = "https://api.openai.com/v1"
         private const val GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta"
         private const val CLAUDE_ENDPOINT = "https://api.anthropic.com/v1"
