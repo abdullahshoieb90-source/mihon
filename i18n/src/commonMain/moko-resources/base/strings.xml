@@ -1161,6 +1161,10 @@
     <string name="pref_translation_style_summary">Every series is translated with the wording learned from this source.</string>
     <string name="pref_translation_style_empty">Nothing learned yet. Use “Learn from a translated copy” on any entry to teach a style.</string>
     <string name="translation_style_none">None — each series uses its own learning</string>
+    <string name="translation_error_quota">The service's quota is used up. Translation continues with the free Google endpoint; check your plan if you want the AI service back.</string>
+    <string name="pref_translation_fallback">Keep translating when the service fails</string>
+    <string name="pref_translation_fallback_summary">If the chosen service runs out of quota or is overloaded, the page is translated with the free Google endpoint instead of staying untranslated.</string>
+    <string name="translation_learn_quota">The AI service's quota is used up. Learning needs an available quota; try again later or use another key.</string>
     <string name="pref_category_translation_ocr">Reading the images</string>
     <string name="pref_translation_ocr_quality">Reading quality</string>
     <string name="pref_translation_ocr_quality_summary">Fast reads only the outlines, accurate reads every line. Slow pages are read in less detail.</string>

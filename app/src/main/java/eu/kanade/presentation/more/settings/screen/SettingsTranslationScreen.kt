@@ -101,6 +101,16 @@ object SettingsTranslationScreen : SearchableSettings {
                 ),
             ),
             Preference.PreferenceGroup(
+                title = stringResource(MR.strings.translation_service),
+                preferenceItems = listOf(
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = preferences.fallbackToGoogle,
+                        title = stringResource(MR.strings.pref_translation_fallback),
+                        subtitle = stringResource(MR.strings.pref_translation_fallback_summary),
+                    ),
+                ),
+            ),
+            Preference.PreferenceGroup(
                 title = stringResource(MR.strings.pref_category_translation_style),
                 preferenceItems = listOf(
                     Preference.PreferenceItem.ListPreference(

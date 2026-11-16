@@ -1133,6 +1133,13 @@ class ReaderViewModel(
     }
 
     private fun toastTranslationError(error: TranslationException) {
+        // Providers answer quota problems with a paragraph of billing links; the reader needs the reason.
+        val detail = error.detail.orEmpty().lowercase()
+        if (QUOTA_MARKERS.any { it in detail }) {
+            context.toast(MR.strings.translation_error_quota)
+            return
+        }
+
         val message = when (error.error) {
             TranslationError.PAGE_NOT_AVAILABLE -> MR.strings.translation_error_page_not_available
             TranslationError.NO_TEXT_FOUND -> MR.strings.translation_error_no_text
@@ -1376,6 +1383,8 @@ class ReaderViewModel(
         const val PREFETCH_READY_TIMEOUT_MILLIS = 10_000L
         const val PAGE_READY_TIMEOUT_MILLIS = 30_000L
         const val ERROR_TOAST_COOLDOWN_MILLIS = 8_000L
+
+        private val QUOTA_MARKERS = listOf("exceeded your current quota", "resource_exhausted", "billing", "quota")
     }
 }
 

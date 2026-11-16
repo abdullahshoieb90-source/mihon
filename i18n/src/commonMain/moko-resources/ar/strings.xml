@@ -973,6 +973,10 @@
     <string name="pref_translation_style_summary">تُترجم كل الأعمال بالصياغة المتعلَّمة من هذا المصدر.</string>
     <string name="pref_translation_style_empty">لم يُتعلَّم شيء بعد. استخدم «تعلّم من نسخة مترجمة» على أي عمل لتعلّم أسلوب.</string>
     <string name="translation_style_none">بدون — كل عمل يستخدم تعلّمه الخاص</string>
+    <string name="translation_error_quota">انتهت حصة الخدمة. الترجمة تكمل عبر جوجل المجاني؛ راجع خطتك لو أردت خدمة الذكاء الاصطناعي.</string>
+    <string name="pref_translation_fallback">أكمل الترجمة عند فشل الخدمة</string>
+    <string name="pref_translation_fallback_summary">لو نفدت حصة الخدمة المختارة أو كانت مشغولة، تُترجم الصفحة بجوجل المجاني بدل أن تبقى بلا ترجمة.</string>
+    <string name="translation_learn_quota">انتهت حصة خدمة الذكاء الاصطناعي. التعلّم يحتاج حصة متاحة؛ أعد المحاولة لاحقًا أو استخدم مفتاحًا آخر.</string>
     <string name="pref_category_translation_ocr">قراءة الصور</string>
     <string name="pref_translation_ocr_quality">جودة القراءة</string>
     <string name="pref_translation_ocr_quality_summary">«سريع» يقرأ الخطوط العريضة فقط، و«دقيق» يقرأ كل سطر. الصفحات البطيئة تُقرأ بتفصيل أقل.</string>

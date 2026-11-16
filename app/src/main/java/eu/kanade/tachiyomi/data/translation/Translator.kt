@@ -54,12 +54,22 @@ class Translator(
         }
         // Only the chat models can be told about the reference wording; the others already got the names swapped
         // into the source text, which they leave alone.
-        return when (preferences.provider.get()) {
-            TranslationProvider.OPENAI,
-            TranslationProvider.GEMINI,
-            TranslationProvider.CLAUDE,
-            -> ai.translate(texts, source, target, hints)
-            else -> service.translate(texts, source, target)
+        val provider = preferences.provider.get()
+        return try {
+            when (provider) {
+                TranslationProvider.OPENAI,
+                TranslationProvider.GEMINI,
+                TranslationProvider.CLAUDE,
+                -> ai.translate(texts, source, target, hints)
+                else -> service.translate(texts, source, target)
+            }
+        } catch (e: TranslationException) {
+            // A key that ran out of quota shouldn't leave the page untranslated: the free endpoint takes over so the
+            // reading continues, without a wall of billing text.
+            val canFallBack = preferences.fallbackToGoogle.get() &&
+                provider != TranslationProvider.GOOGLE &&
+                e.error == TranslationError.PROVIDER_ERROR
+            if (canFallBack) google.translate(texts, source, target) else throw e
         }
     }
 }

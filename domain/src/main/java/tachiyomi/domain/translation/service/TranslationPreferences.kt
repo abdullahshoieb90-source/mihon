@@ -108,6 +108,12 @@ class TranslationPreferences(
         100,
     )
 
+    // When a paid service runs out of quota or is overloaded, keep the reading going through the free endpoint.
+    val fallbackToGoogle: Preference<Boolean> = preferenceStore.getBoolean(
+        "pref_translation_fallback_google",
+        true,
+    )
+
     // The source whose learned style is followed everywhere; -1 means each series uses only its own memory.
     val styleSourceId: Preference<Long> = preferenceStore.getLong(
         "pref_translation_style_source",

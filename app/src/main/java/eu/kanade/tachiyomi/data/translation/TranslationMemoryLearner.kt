@@ -61,6 +61,8 @@ class TranslationMemoryLearner(
     /** Providers answer in English with machine codes; the reader gets a sentence instead. */
     private fun friendly(e: TranslationException): String = when {
         e.error == TranslationError.MISSING_API_KEY -> context.stringResource(MR.strings.translation_learn_no_key)
+        QUOTA_MARKERS.any { marker -> e.message.orEmpty().lowercase().contains(marker) } ->
+            context.stringResource(MR.strings.translation_learn_quota)
         BUSY_MARKERS.any { marker -> e.message.orEmpty().lowercase().contains(marker) } ->
             context.stringResource(MR.strings.translation_learn_busy)
         else -> context.stringResource(MR.strings.translation_learn_failed, e.message.orEmpty())
@@ -219,6 +221,8 @@ class TranslationMemoryLearner(
     }
 
     companion object {
+        private val QUOTA_MARKERS = listOf("quota", "resource_exhausted", "billing")
+
         private val BUSY_MARKERS = listOf("high demand", "overloaded", "unavailable", "try again", "rate limit", "503")
 
         private const val MAX_WIDTH = 1100
