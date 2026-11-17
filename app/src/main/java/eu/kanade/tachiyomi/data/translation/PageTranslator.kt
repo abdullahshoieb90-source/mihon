@@ -54,6 +54,8 @@ class PageTranslator(
     private val ocrEngine: OcrEngine,
     private val preferences: TranslationPreferences,
     private val memory: TranslationMemoryStore,
+    private val glossary: GlossaryStore,
+    private val cache: TranslationCacheStore,
 ) {
 
     suspend fun translate(
@@ -61,10 +63,17 @@ class PageTranslator(
         openStream: (() -> InputStream)?,
         mangaId: Long? = null,
         seriesTitle: String? = null,
+        chapterId: Long? = null,
     ): TranslatedPage = withContext(Dispatchers.IO) {
         val open = openStream ?: throw TranslationException(TranslationError.PAGE_NOT_AVAILABLE)
         val source = translator.sourceLanguage
         val target = translator.targetLanguage
+
+        // A page translated before is read back instead of being recognized and translated again.
+        if (mangaId != null && mangaId > 0 && chapterId != null && chapterId > 0) {
+            cache.load(mangaId, chapterId, pageIndex, source.code, target.code, preferences.provider.get().name)
+                ?.let { return@withContext it }
+        }
 
         val file = cacheFile(pageIndex)
         try {
@@ -115,19 +124,22 @@ class PageTranslator(
                 } else {
                     source
                 }
+                // Terms the reader fixed by hand win over anything learned, so they are swapped into the source
+                // text first and the learned wording only fills in what is left.
+                val glossed = glossary.terms().withGlossaryApplied(cleaned)
                 // What a translated copy of this series already settled on for these very lines.
                 val seriesKey = seriesTitle?.takeIf { it.isNotBlank() }?.let { seriesKeyOf(it) }
                     ?: mangaId?.takeIf { it > 0 }?.toString()
-                val seriesHints = if (seriesKey != null) memory.recall(seriesKey, cleaned) else emptyList()
+                val seriesHints = if (seriesKey != null) memory.recall(seriesKey, glossed) else emptyList()
                 // A style learned from one source is followed in every series the reader opens.
                 val styleSource = preferences.styleSourceId.get()
                 val styleHints = if (styleSource > 0) {
-                    memory.recall(styleKeyOf(styleSource), cleaned)
+                    memory.recall(styleKeyOf(styleSource), glossed)
                 } else {
                     emptyList()
                 }
                 val hints = (seriesHints + styleHints).distinctBy { it.source }
-                val reference = hints.withNamesApplied(cleaned)
+                val reference = hints.withNamesApplied(glossed)
                 val translation = translateAll(reference, effectiveSource, target, hints)
                 val translatedBlocks = blocks.mapIndexedNotNull { index, block ->
                     val translated = translation.getOrNull(index)?.trim()
@@ -145,7 +157,7 @@ class PageTranslator(
                 }
                 if (translatedBlocks.isEmpty()) throw TranslationException(TranslationError.NO_TRANSLATION)
 
-                TranslatedPage(
+                val translatedPage = TranslatedPage(
                     pageIndex = pageIndex,
                     width = displayWidth,
                     height = displayHeight,
@@ -155,6 +167,10 @@ class PageTranslator(
                     source = source,
                     target = target,
                 )
+                if (mangaId != null && mangaId > 0 && chapterId != null && chapterId > 0) {
+                    cache.save(mangaId, chapterId, translatedPage, preferences.provider.get().name)
+                }
+                translatedPage
             } finally {
                 decoder.recycle()
                 descriptor.close()
