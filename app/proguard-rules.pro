@@ -83,6 +83,11 @@
 -keep class com.google.firebase.installations.** { *; }
 -keep interface com.google.firebase.installations.** { *; }
 
+# ML Kit loads registrars named in the manifest by calling their no-arg constructors reflectively.
+-keep class com.google.mlkit.** implements com.google.firebase.components.ComponentRegistrar {
+    public <init>();
+}
+
 # KotlinX Datetime
 -keep,allowoptimization class kotlinx.datetime.** { public protected *; }
 
