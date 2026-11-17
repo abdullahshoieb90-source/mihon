@@ -36,6 +36,7 @@ import eu.kanade.tachiyomi.util.lang.toDateTimestampString
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import eu.kanade.tachiyomi.util.system.isFossBuildType
 import eu.kanade.tachiyomi.util.system.isNightlyBuildType
+import eu.kanade.tachiyomi.util.system.isOptimizedBuildType
 import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.system.updaterEnabled
 import kotlinx.coroutines.Dispatchers
@@ -263,6 +264,15 @@ object AboutScreen : Screen() {
                         "$it (${BuildConfig.COMMIT_SHA}, $buildTime)"
                     } else {
                         "$it (${BuildConfig.COMMIT_SHA})"
+                    }
+                }
+            }
+            isOptimizedBuildType -> {
+                "Dev v${BuildConfig.VERSION_NAME}".let {
+                    if (buildTime != null) {
+                        "$it ($buildTime)"
+                    } else {
+                        it
                     }
                 }
             }

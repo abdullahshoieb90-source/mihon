@@ -118,6 +118,27 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      # The build the fork actually ships. Built here too, so a change that only breaks minification
+      # is caught on the branch instead of on a release.
+      - name: Build optimized APK
+        run: |-
+          set -o pipefail
+          ./gradlew assembleOptimized -Pdist=local --stacktrace 2>&1 | tee build-optimized.log
+
+      - name: Verify optimized APK identity
+        run: |-
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | tail -1)
+          APK=app/build/outputs/apk/optimized/app-arm64-v8a-optimized.apk
+          "$AAPT" dump badging "$APK" | grep -E "^(package|application-label|sdkVersion|targetSdkVersion)"
+
+      - name: Upload optimized APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: apk-optimized-arm64
+          path: app/build/outputs/apk/optimized/app-arm64-v8a-optimized.apk
+          if-no-files-found: error
+          retention-days: 30
+
       # Kept after the APK steps so a formatting nit never costs you the build.
       - name: Check code format
         id: spotless
@@ -154,7 +175,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
-          rm -f spotless.log build.log
+          rm -f spotless.log build.log build-optimized.log
           if [ -z "$(git status --porcelain)" ]; then
             echo "nothing to format"
             exit 0
