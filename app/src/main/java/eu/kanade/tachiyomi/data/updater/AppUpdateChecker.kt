@@ -25,7 +25,7 @@ class AppUpdateChecker(
                     isFossBuildType,
                     isNightlyBuildType,
                     BuildConfig.COMMIT_COUNT.toInt(),
-                    BuildConfig.VERSION_NAME,
+                    BuildConfig.DEV_VERSION_NAME,
                     GITHUB_REPO,
                     forceCheck,
                 ),
@@ -40,7 +40,8 @@ val GITHUB_REPO: String by lazy {
     if (isNightlyBuildType) {
         "mihonapp/mihon-preview"
     } else {
-        "mihonapp/mihon"
+        // This fork publishes its own releases, and those are the ones its updater should offer.
+        FORK_REPO
     }
 }
 
@@ -48,8 +49,10 @@ val RELEASE_TAG: String by lazy {
     if (isNightlyBuildType) {
         "r${BuildConfig.COMMIT_COUNT}"
     } else {
-        "v${BuildConfig.VERSION_NAME}"
+        "v${BuildConfig.DEV_VERSION_NAME}"
     }
 }
+
+private const val FORK_REPO = "abdullahshoieb90-source/mihon"
 
 val RELEASE_URL = "https://github.com/$GITHUB_REPO/releases/tag/$RELEASE_TAG"

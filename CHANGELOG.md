@@ -43,6 +43,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ### Improved
 - Ship an optimized build instead of a debug build, so the app starts faster and switches tabs, opens menus and lists sources without the debug build's overhead
+- Turn on the in-app updater and point it at this fork's own releases, so opening the app offers a new version with its notes and a button to download and install it
 
 ### Removed
 - Remove "Custom hardware bitmap threshold" and "Custom display profile" advanced settings ([@wwww-wwww](https://github.com/wwww-wwww)) ([#3786](https://github.com/mihonapp/mihon/pull/3786))

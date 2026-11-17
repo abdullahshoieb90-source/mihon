@@ -31,6 +31,10 @@ if (Config.includeTelemetry) {
 
 val keystorePropertiesFile = layout.settingsDirectory.file("keystore.properties").asFile
 
+// The version this fork ships, and the one its release tags carry. The updater compares the two, and the
+// release workflow refuses to publish a tag that doesn't match, so they can't drift apart.
+val devVersionName = "1.18.0"
+
 android {
     namespace = "eu.kanade.tachiyomi"
 
@@ -42,6 +46,10 @@ android {
 
         buildConfigField("boolean", "TELEMETRY_INCLUDED", "${Config.includeTelemetry}")
         buildConfigField("boolean", "UPDATER_ENABLED", "${Config.enableUpdater}")
+
+        // The version this fork ships. Mihon's own versionName counts commits and never matches a release
+        // tag, so the in-app updater compares against this instead. Bump it with every release tag.
+        buildConfigField("String", "DEV_VERSION_NAME", "\"$devVersionName\"")
 
         // Lets builds that install next to the official app be told apart in the launcher.
         manifestPlaceholders["appLabel"] = "@string/app_name"
