@@ -268,7 +268,8 @@ object AboutScreen : Screen() {
                 }
             }
             isOptimizedBuildType -> {
-                "Dev v${BuildConfig.VERSION_NAME}".let {
+                // The dev version, not Mihon's: it's what the updater compares against the release tags.
+                "Dev v${BuildConfig.DEV_VERSION_NAME}".let {
                     if (buildTime != null) {
                         "$it ($buildTime)"
                     } else {

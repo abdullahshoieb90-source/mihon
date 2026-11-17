@@ -52,7 +52,7 @@ jobs:
         id: build
         run: |
           set -o pipefail
-          ./gradlew assembleDebug -Pdist=local --stacktrace 2>&1 | tee build.log
+          ./gradlew assembleDebug -Pdist=local -Penable-updater=true --stacktrace 2>&1 | tee build.log
 
       # Compiler errors are echoed as workflow annotations, which are readable
       # from the API even when the raw job log is not.
@@ -130,7 +130,7 @@ jobs:
       - name: Build optimized APK
         run: |-
           set -o pipefail
-          ./gradlew assembleOptimized -Pdist=local --stacktrace 2>&1 | tee build-optimized.log
+          ./gradlew assembleOptimized -Pdist=local -Penable-updater=true --stacktrace 2>&1 | tee build-optimized.log
 
       - name: Verify optimized APK identity
         run: |-
