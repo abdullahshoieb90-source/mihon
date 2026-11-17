@@ -6,11 +6,17 @@ import eu.kanade.tachiyomi.ui.browse.source.SourcesViewModel
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Utility class to change the application's language in runtime.
  */
 object LocaleHelper {
+
+    private val displayNames = ConcurrentHashMap<String, String>()
+
+    @Volatile
+    private var cachedLocale: Locale? = null
 
     /**
      * Sorts by display name, except keeps the "all" (displayed as "Multi") locale at the top.
@@ -69,6 +75,21 @@ object LocaleHelper {
             return ""
         }
 
+        // A language row asks for this on every recomposition, and building the locale and asking it for its own
+        // name is an ICU call each time. There are only a few dozen codes, so the answer is worth keeping.
+        val currentLocale = Locale.getDefault()
+        if (currentLocale != cachedLocale) {
+            synchronized(this) {
+                if (currentLocale != cachedLocale) {
+                    displayNames.clear()
+                    cachedLocale = currentLocale
+                }
+            }
+        }
+        return displayNames.getOrPut(lang) { computeDisplayName(lang) }
+    }
+
+    private fun computeDisplayName(lang: String): String {
         val locale = when (lang) {
             "" -> LocaleListCompat.getAdjustedDefault()[0]
             "zh-CN" -> Locale.forLanguageTag("zh-Hans")
