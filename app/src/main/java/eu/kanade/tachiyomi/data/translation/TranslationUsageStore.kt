@@ -4,7 +4,6 @@ import android.content.Context
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
-import kotlin.time.Clock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -16,6 +15,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import tachiyomi.domain.translation.model.TranslationProvider
 import java.io.File
+import kotlin.time.Clock
 
 /** What one provider was asked for over a stretch of time. */
 data class ProviderUsage(
@@ -72,10 +72,12 @@ class TranslationUsageStore(
                 val loaded = loadLocked()
                 val forDay = loaded.days[dayKey].orEmpty()
                 val previous = forDay[provider.name] ?: UsageCounters()
-                val updated = forDay + (provider.name to previous.copy(
-                    requests = previous.requests + 1,
-                    characters = previous.characters + characters.toLong(),
-                ))
+                val updated = forDay + (
+                    provider.name to previous.copy(
+                        requests = previous.requests + 1,
+                        characters = previous.characters + characters.toLong(),
+                    )
+                    )
                 val file = UsageFile((loaded.days + (dayKey to updated)).pruned())
                 cache = file
                 write(file)

@@ -31,7 +31,6 @@ import eu.kanade.tachiyomi.data.translation.LearnedStyle
 import eu.kanade.tachiyomi.data.translation.TranslationCacheStats
 import eu.kanade.tachiyomi.data.translation.TranslationUsage
 import eu.kanade.tachiyomi.util.system.toast
-import java.text.NumberFormat
 import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
 import tachiyomi.domain.translation.model.TranslationLanguage
@@ -41,6 +40,7 @@ import tachiyomi.domain.translation.model.TranslationTextColor
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
+import java.text.NumberFormat
 
 object SettingsTranslationScreen : SearchableSettings {
 
