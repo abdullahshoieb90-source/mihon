@@ -138,6 +138,16 @@ jobs:
           APK=app/build/outputs/apk/optimized/app-arm64-v8a-optimized.apk
           "$AAPT" dump badging "$APK" | grep -E "^(package|application-label|sdkVersion|targetSdkVersion)"
 
+      - name: Verify OCR registrar constructors in the optimized APK
+        run: |-
+          APK=app/build/outputs/apk/optimized/app-arm64-v8a-optimized.apk
+          ANALYZER="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+          for registrar in common.internal.CommonComponentRegistrar \
+              vision.common.internal.VisionCommonRegistrar \
+              vision.text.internal.TextRegistrar; do
+            "$ANALYZER" dex code --class "com.google.mlkit.$registrar" --method '<init>()V' "$APK"
+          done
+
       - name: Upload optimized APK
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
