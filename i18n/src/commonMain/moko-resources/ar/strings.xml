@@ -1002,4 +1002,14 @@
     <string name="translation_error_no_text">لم يُعثر على نص في هذه الصفحة</string>
     <string name="translation_error_no_translation">تعذّر ترجمة نص هذه الصفحة</string>
     <string name="translation_error_page_not_available">الصفحة لم تُحمَّل بعد</string>
+    <string name="translation_glossary">القاموس</string>
+    <string name="translation_glossary_summary">أسماء وعبارات يجب أن تحافظ عليها كل ترجمة</string>
+    <string name="translation_glossary_hint">يُطبَّق قبل الترجمة، فتحافظ كل خدمة على صياغتك. المطابقة حرفية.</string>
+    <string name="translation_glossary_source">الأصل</string>
+    <string name="translation_glossary_target">الترجمة</string>
+    <string name="translation_glossary_add">إضافة</string>
+    <string name="translation_glossary_empty">لا توجد مصطلحات بعد. أضِف اسمًا والصياغة التي تريدها، مثال: Naruto ← ناروتو.</string>
+    <string name="translation_glossary_count">%1$d مصطلحًا</string>
+    <string name="translation_glossary_delete">حذف</string>
+    <string name="translation_glossary_clear">مسح الكل</string>
 </resources>

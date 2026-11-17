@@ -1,16 +1,32 @@
 package eu.kanade.presentation.more.settings.screen
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.components.displayName
 import eu.kanade.presentation.more.settings.Preference
+import eu.kanade.tachiyomi.data.translation.LearnedPair
 import eu.kanade.tachiyomi.data.translation.LearnedStyle
+import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
 import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationLetterCase
@@ -136,6 +152,19 @@ object SettingsTranslationScreen : SearchableSettings {
                 ),
             ),
             Preference.PreferenceGroup(
+                title = stringResource(MR.strings.translation_glossary),
+                preferenceItems = listOf(
+                    Preference.PreferenceItem.InfoPreference(
+                        title = stringResource(MR.strings.translation_glossary_hint),
+                    ),
+                    Preference.PreferenceItem.CustomPreference(
+                        title = stringResource(MR.strings.translation_glossary_summary),
+                    ) {
+                        GlossaryManager()
+                    },
+                ),
+            ),
+            Preference.PreferenceGroup(
                 title = stringResource(MR.strings.pref_category_translation_ocr),
                 preferenceItems = listOf(
                     Preference.PreferenceItem.SliderPreference(
@@ -234,5 +263,109 @@ object SettingsTranslationScreen : SearchableSettings {
                 ),
             ),
         )
+    }
+
+    @Composable
+    private fun GlossaryManager() {
+        val context = LocalContext.current
+        val glossary = remember { context.appGraph.glossaryStore }
+        val scope = rememberCoroutineScope()
+        var terms by remember { mutableStateOf<List<LearnedPair>>(emptyList()) }
+        var showDialog by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { terms = glossary.list() }
+
+        TextButton(onClick = { showDialog = true }) {
+            Text(text = stringResource(MR.strings.translation_glossary_count, terms.size))
+        }
+
+        if (showDialog) {
+            var source by remember { mutableStateOf("") }
+            var target by remember { mutableStateOf("") }
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text(text = stringResource(MR.strings.translation_glossary)) },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = 320.dp)
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        TextField(
+                            value = source,
+                            onValueChange = { source = it },
+                            label = { Text(text = stringResource(MR.strings.translation_glossary_source)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        TextField(
+                            value = target,
+                            onValueChange = { target = it },
+                            label = { Text(text = stringResource(MR.strings.translation_glossary_target)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        if (terms.isEmpty()) {
+                            Text(text = stringResource(MR.strings.translation_glossary_empty))
+                        } else {
+                            terms.forEach { term ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        text = "${term.source} → ${term.target}",
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    TextButton(
+                                        onClick = {
+                                            scope.launch {
+                                                glossary.remove(term.source)
+                                                terms = glossary.list()
+                                            }
+                                        },
+                                    ) {
+                                        Text(text = stringResource(MR.strings.translation_glossary_delete))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                glossary.add(source, target)
+                                terms = glossary.list()
+                                source = ""
+                                target = ""
+                            }
+                        },
+                        enabled = source.isNotBlank() && target.isNotBlank(),
+                    ) {
+                        Text(text = stringResource(MR.strings.translation_glossary_add))
+                    }
+                },
+                dismissButton = {
+                    Row {
+                        if (terms.isNotEmpty()) {
+                            TextButton(
+                                onClick = {
+                                    scope.launch {
+                                        glossary.clear()
+                                        terms = glossary.list()
+                                    }
+                                },
+                            ) {
+                                Text(text = stringResource(MR.strings.translation_glossary_clear))
+                            }
+                        }
+                        TextButton(onClick = { showDialog = false }) {
+                            Text(text = stringResource(MR.strings.action_cancel))
+                        }
+                    }
+                },
+            )
+        }
     }
 }

@@ -1190,4 +1190,14 @@
     <string name="translation_error_no_text">No text was found on this page</string>
     <string name="translation_error_no_translation">The page text could not be translated</string>
     <string name="translation_error_page_not_available">The page is not loaded yet</string>
+    <string name="translation_glossary">Glossary</string>
+    <string name="translation_glossary_summary">Names and phrases every translation must keep</string>
+    <string name="translation_glossary_hint">Applied before translating, so every service keeps your wording. Matching is exact.</string>
+    <string name="translation_glossary_source">Original</string>
+    <string name="translation_glossary_target">Translation</string>
+    <string name="translation_glossary_add">Add</string>
+    <string name="translation_glossary_empty">No terms yet. Add a name and the wording you want, e.g. Naruto → ناروتو.</string>
+    <string name="translation_glossary_count">%1$d terms</string>
+    <string name="translation_glossary_delete">Delete</string>
+    <string name="translation_glossary_clear">Clear all</string>
 </resources>
