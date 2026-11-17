@@ -33,6 +33,13 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
+      # A runner starts without a debug keystore, and the one AGP then generates is a new key on every
+      # run, so each build refused to install over the last one. Use the committed dev key instead.
+      - name: Use the repository's debug signing key
+        run: |-
+          mkdir -p ~/.android
+          cp .github/debug.keystore ~/.android/debug.keystore
+
       # Formatting is fixed here rather than reported: the repository's own workflow runs
       # spotlessCheck, and a stray space there shouldn't send anyone hunting through logs.
       - name: Apply code format
