@@ -72,12 +72,11 @@ class TranslationUsageStore(
                 val loaded = loadLocked()
                 val forDay = loaded.days[dayKey].orEmpty()
                 val previous = forDay[provider.name] ?: UsageCounters()
-                val updated = forDay + (
-                    provider.name to previous.copy(
-                        requests = previous.requests + 1,
-                        characters = previous.characters + characters.toLong(),
-                    )
-                    )
+                val counted = UsageCounters(
+                    requests = previous.requests + 1,
+                    characters = previous.characters + characters.toLong(),
+                )
+                val updated = forDay + (provider.name to counted)
                 val file = UsageFile((loaded.days + (dayKey to updated)).pruned())
                 cache = file
                 write(file)
