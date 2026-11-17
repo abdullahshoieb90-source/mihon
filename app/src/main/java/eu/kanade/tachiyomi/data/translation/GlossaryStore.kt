@@ -72,6 +72,12 @@ class GlossaryStore(
     /** The terms longest first, so a phrase wins over the word inside it. */
     suspend fun terms(): List<LearnedPair> = load().sortedByDescending { it.source.length }
 
+    /**
+     * When the terms last changed. Saved translations record it, so editing a term retitles the next chapter instead
+     * of showing the wording that was current when the page was first translated.
+     */
+    suspend fun version(): Long = withContext(Dispatchers.IO) { mutex.withLock { file().lastModified() } }
+
     private suspend fun load(): List<LearnedPair> = withContext(Dispatchers.IO) {
         mutex.withLock { loadLocked() }
     }

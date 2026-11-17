@@ -1,5 +1,6 @@
 package eu.kanade.presentation.more.settings.screen
 
+import android.text.format.Formatter
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,8 @@ import eu.kanade.presentation.components.displayName
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.tachiyomi.data.translation.LearnedPair
 import eu.kanade.tachiyomi.data.translation.LearnedStyle
+import eu.kanade.tachiyomi.data.translation.TranslationCacheStats
+import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
 import tachiyomi.domain.translation.model.TranslationLanguage
@@ -166,6 +169,16 @@ object SettingsTranslationScreen : SearchableSettings {
                         title = stringResource(MR.strings.translation_glossary_summary),
                     ) {
                         GlossaryManager()
+                    },
+                ),
+            ),
+            Preference.PreferenceGroup(
+                title = stringResource(MR.strings.translation_cache),
+                preferenceItems = listOf(
+                    Preference.PreferenceItem.CustomPreference(
+                        title = stringResource(MR.strings.translation_cache),
+                    ) {
+                        TranslationCacheManager()
                     },
                 ),
             ),
@@ -368,6 +381,54 @@ object SettingsTranslationScreen : SearchableSettings {
                         TextButton(onClick = { showDialog = false }) {
                             Text(text = stringResource(MR.strings.action_cancel))
                         }
+                    }
+                },
+            )
+        }
+    }
+
+    @Composable
+    private fun TranslationCacheManager() {
+        val context = LocalContext.current
+        val cache = remember { context.appGraph.translationCacheStore }
+        val scope = rememberCoroutineScope()
+        var stats by remember { mutableStateOf<TranslationCacheStats?>(null) }
+        var showConfirm by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { stats = cache.stats() }
+
+        val current = stats ?: return
+
+        TextButton(onClick = { showConfirm = true }, enabled = current.chapters > 0) {
+            Text(
+                text = stringResource(
+                    MR.strings.translation_cache_summary,
+                    current.chapters,
+                    Formatter.formatFileSize(context, current.bytes),
+                ),
+            )
+        }
+
+        if (showConfirm) {
+            AlertDialog(
+                onDismissRequest = { showConfirm = false },
+                title = { Text(text = stringResource(MR.strings.translation_cache_clear)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showConfirm = false
+                            scope.launch {
+                                cache.clearAll()
+                                stats = cache.stats()
+                                context.toast(MR.strings.translation_cache_cleared)
+                            }
+                        },
+                    ) {
+                        Text(text = stringResource(MR.strings.translation_cache_clear))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showConfirm = false }) {
+                        Text(text = stringResource(MR.strings.action_cancel))
                     }
                 },
             )

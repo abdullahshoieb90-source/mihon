@@ -55,6 +55,7 @@ class PageTranslator(
     private val preferences: TranslationPreferences,
     private val memory: TranslationMemoryStore,
     private val glossary: GlossaryStore,
+    private val cache: TranslationCacheStore,
 ) {
 
     suspend fun translate(
@@ -62,10 +63,17 @@ class PageTranslator(
         openStream: (() -> InputStream)?,
         mangaId: Long? = null,
         seriesTitle: String? = null,
+        chapterId: Long? = null,
     ): TranslatedPage = withContext(Dispatchers.IO) {
         val open = openStream ?: throw TranslationException(TranslationError.PAGE_NOT_AVAILABLE)
         val source = translator.sourceLanguage
         val target = translator.targetLanguage
+
+        // A page translated before is read back instead of being recognized and translated again.
+        if (mangaId != null && mangaId > 0 && chapterId != null && chapterId > 0) {
+            cache.load(mangaId, chapterId, pageIndex, source.code, target.code, preferences.provider.get().name)
+                ?.let { return@withContext it }
+        }
 
         val file = cacheFile(pageIndex)
         try {
@@ -149,7 +157,7 @@ class PageTranslator(
                 }
                 if (translatedBlocks.isEmpty()) throw TranslationException(TranslationError.NO_TRANSLATION)
 
-                TranslatedPage(
+                val translatedPage = TranslatedPage(
                     pageIndex = pageIndex,
                     width = displayWidth,
                     height = displayHeight,
@@ -159,6 +167,10 @@ class PageTranslator(
                     source = source,
                     target = target,
                 )
+                if (mangaId != null && mangaId > 0 && chapterId != null && chapterId > 0) {
+                    cache.save(mangaId, chapterId, translatedPage, preferences.provider.get().name)
+                }
+                translatedPage
             } finally {
                 decoder.recycle()
                 descriptor.close()

@@ -27,6 +27,7 @@ import eu.kanade.tachiyomi.data.library.MetadataUpdateWorker
 import eu.kanade.tachiyomi.data.notification.NotificationReceiver
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.translation.GlossaryStore
+import eu.kanade.tachiyomi.data.translation.TranslationCacheStore
 import eu.kanade.tachiyomi.data.translation.TranslationLearningWorker
 import eu.kanade.tachiyomi.data.translation.TranslationMemoryStore
 import eu.kanade.tachiyomi.data.updater.AppUpdateChecker
@@ -101,6 +102,7 @@ interface AppGraph : ViewModelGraph {
     val translationPreferences: TranslationPreferences
     val translationMemoryStore: TranslationMemoryStore
     val glossaryStore: GlossaryStore
+    val translationCacheStore: TranslationCacheStore
 
     val crashLogUtil: CrashLogUtil
 

@@ -1202,4 +1202,8 @@
     <string name="translation_glossary_clear">Clear all</string>
     <string name="pref_translation_auto">Translate automatically when opening</string>
     <string name="pref_translation_auto_summary">Turns translation mode on when a chapter opens</string>
+    <string name="translation_cache">Saved translations</string>
+    <string name="translation_cache_summary">%1$d chapters · %2$s</string>
+    <string name="translation_cache_clear">Clear saved translations</string>
+    <string name="translation_cache_cleared">Saved translations cleared</string>
 </resources>

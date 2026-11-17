@@ -1014,4 +1014,8 @@
     <string name="translation_glossary_clear">مسح الكل</string>
     <string name="pref_translation_auto">ترجمة تلقائية عند الفتح</string>
     <string name="pref_translation_auto_summary">يُفعّل وضع الترجمة عند فتح الفصل</string>
+    <string name="translation_cache">الترجمات المحفوظة</string>
+    <string name="translation_cache_summary">%1$d فصل · %2$s</string>
+    <string name="translation_cache_clear">مسح الترجمات المحفوظة</string>
+    <string name="translation_cache_cleared">تم مسح الترجمات المحفوظة</string>
 </resources>
