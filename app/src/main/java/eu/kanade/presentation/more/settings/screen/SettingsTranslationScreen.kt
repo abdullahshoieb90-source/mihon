@@ -120,6 +120,11 @@ object SettingsTranslationScreen : SearchableSettings {
                 title = stringResource(MR.strings.translation_service),
                 preferenceItems = listOf(
                     Preference.PreferenceItem.SwitchPreference(
+                        preference = preferences.autoTranslate,
+                        title = stringResource(MR.strings.pref_translation_auto),
+                        subtitle = stringResource(MR.strings.pref_translation_auto_summary),
+                    ),
+                    Preference.PreferenceItem.SwitchPreference(
                         preference = preferences.fallbackToGoogle,
                         title = stringResource(MR.strings.pref_translation_fallback),
                         subtitle = stringResource(MR.strings.pref_translation_fallback_summary),

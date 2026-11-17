@@ -1200,4 +1200,6 @@
     <string name="translation_glossary_count">%1$d terms</string>
     <string name="translation_glossary_delete">Delete</string>
     <string name="translation_glossary_clear">Clear all</string>
+    <string name="pref_translation_auto">Translate automatically when opening</string>
+    <string name="pref_translation_auto_summary">Turns translation mode on when a chapter opens</string>
 </resources>

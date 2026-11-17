@@ -99,6 +99,7 @@ import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.domain.translation.service.TranslationPreferences
 import tachiyomi.i18n.MR
 import tachiyomi.source.local.image.LocalCoverManager
 import tachiyomi.source.local.isLocal
@@ -137,6 +138,7 @@ class ReaderViewModel(
     private val chapterCache: ChapterCache,
     private val downloadCache: DownloadCache,
     private val pageTranslator: PageTranslator,
+    private val translationPreferences: TranslationPreferences,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -590,6 +592,9 @@ class ReaderViewModel(
         eventChannel.trySend(Event.PageChanged)
 
         if (mutableTranslationMode.value) {
+            translatePageInline(page)
+        } else if (translationPreferences.autoTranslate.get() && !basePreferences.highQualityRenderer.get()) {
+            // A reader who asked for automatic translation shouldn't have to press the button on every chapter.
             translatePageInline(page)
         }
     }

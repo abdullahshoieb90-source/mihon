@@ -114,6 +114,12 @@ class TranslationPreferences(
         true,
     )
 
+    // Turns translation mode on when a chapter opens, so the first page is already translated.
+    val autoTranslate: Preference<Boolean> = preferenceStore.getBoolean(
+        "pref_translation_auto_translate",
+        false,
+    )
+
     // The source whose learned style is followed everywhere; -1 means each series uses only its own memory.
     val styleSourceId: Preference<Long> = preferenceStore.getLong(
         "pref_translation_style_source",

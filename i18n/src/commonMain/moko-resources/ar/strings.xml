@@ -1012,4 +1012,6 @@
     <string name="translation_glossary_count">%1$d مصطلحًا</string>
     <string name="translation_glossary_delete">حذف</string>
     <string name="translation_glossary_clear">مسح الكل</string>
+    <string name="pref_translation_auto">ترجمة تلقائية عند الفتح</string>
+    <string name="pref_translation_auto_summary">يُفعّل وضع الترجمة عند فتح الفصل</string>
 </resources>
