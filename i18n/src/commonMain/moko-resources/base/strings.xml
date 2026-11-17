@@ -1206,4 +1206,13 @@
     <string name="translation_cache_summary">%1$d chapters · %2$s</string>
     <string name="translation_cache_clear">Clear saved translations</string>
     <string name="translation_cache_cleared">Saved translations cleared</string>
+    <string name="translation_usage">Usage</string>
+    <string name="translation_usage_hint">What each service was asked for. Every provider bills or caps by characters, so that is what a page counts as.</string>
+    <string name="translation_usage_empty">Nothing translated yet.</string>
+    <string name="translation_usage_today">Today: %1$s requests · %2$s characters</string>
+    <string name="translation_usage_month">This month: %1$s requests · %2$s characters</string>
+    <string name="translation_usage_provider">%1$s requests · %2$s characters</string>
+    <string name="translation_usage_quota">%1$s of %2$s in the approximate free tier</string>
+    <string name="translation_usage_reset">Reset the counter</string>
+    <string name="translation_usage_reset_done">Usage counter reset</string>
 </resources>

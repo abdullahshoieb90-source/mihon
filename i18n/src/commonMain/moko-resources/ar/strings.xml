@@ -1099,4 +1099,13 @@
     <string name="update_check_skip_title">تخطّي %s؟</string>
     <string name="update_check_skip_message">كثيرًا ما تحمل التحديثات إصلاحات للأخطاء وتحسينات أمنية. لن يُذكِّرك التطبيق بهذا الإصدار مرة أخرى، لكن ستصلك رسالة عند صدور إصدار أحدث.</string>
     <string name="information_webview_crashed">توقّف عرض الويب عن العمل وأُغلقت الصفحة</string>
+    <string name="translation_usage">الاستهلاك</string>
+    <string name="translation_usage_hint">ما طُلِب من كل خدمة. كل مزوّد يحاسب أو يحدّد بالأحرف، فالصفحة تُحسَب بعدد أحرفها.</string>
+    <string name="translation_usage_empty">لا يوجد استهلاك مسجَّل بعد.</string>
+    <string name="translation_usage_today">اليوم: %1$s طلب · %2$s حرف</string>
+    <string name="translation_usage_month">هذا الشهر: %1$s طلب · %2$s حرف</string>
+    <string name="translation_usage_provider">%1$s طلب · %2$s حرف</string>
+    <string name="translation_usage_quota">%1$s من %2$s من الحد المجاني التقريبي</string>
+    <string name="translation_usage_reset">تصفير العدّاد</string>
+    <string name="translation_usage_reset_done">تم تصفير العدّاد</string>
 </resources>

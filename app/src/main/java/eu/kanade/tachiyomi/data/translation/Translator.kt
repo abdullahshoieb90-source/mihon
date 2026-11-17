@@ -13,6 +13,7 @@ import tachiyomi.domain.translation.service.TranslationPreferences
 class Translator(
     private val preferences: TranslationPreferences,
     networkHelper: NetworkHelper,
+    private val usage: TranslationUsageStore,
 ) {
 
     private val google = GoogleTranslationService(networkHelper)
@@ -55,21 +56,32 @@ class Translator(
         // Only the chat models can be told about the reference wording; the others already got the names swapped
         // into the source text, which they leave alone.
         val provider = preferences.provider.get()
+        val characters = texts.sumOf { it.length }
         return try {
-            when (provider) {
+            val translated = when (provider) {
                 TranslationProvider.OPENAI,
                 TranslationProvider.GEMINI,
                 TranslationProvider.CLAUDE,
                 -> ai.translate(texts, source, target, hints)
                 else -> service.translate(texts, source, target)
             }
+            usage.record(provider, characters)
+            translated
         } catch (e: TranslationException) {
             // A key that ran out of quota shouldn't leave the page untranslated: the free endpoint takes over so the
             // reading continues, without a wall of billing text.
             val canFallBack = preferences.fallbackToGoogle.get() &&
                 provider != TranslationProvider.GOOGLE &&
                 e.error == TranslationError.PROVIDER_ERROR
-            if (canFallBack) google.translate(texts, source, target) else throw e
+            if (canFallBack) {
+                val translated = google.translate(texts, source, target)
+                // The request that failed still reached the provider and still counts towards its quota.
+                usage.record(provider, characters)
+                usage.record(TranslationProvider.GOOGLE, characters)
+                translated
+            } else {
+                throw e
+            }
         }
     }
 }

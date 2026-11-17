@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -28,7 +29,9 @@ import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.tachiyomi.data.translation.LearnedPair
 import eu.kanade.tachiyomi.data.translation.LearnedStyle
 import eu.kanade.tachiyomi.data.translation.TranslationCacheStats
+import eu.kanade.tachiyomi.data.translation.TranslationUsage
 import eu.kanade.tachiyomi.util.system.toast
+import java.text.NumberFormat
 import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
 import tachiyomi.domain.translation.model.TranslationLanguage
@@ -169,6 +172,19 @@ object SettingsTranslationScreen : SearchableSettings {
                         title = stringResource(MR.strings.translation_glossary_summary),
                     ) {
                         GlossaryManager()
+                    },
+                ),
+            ),
+            Preference.PreferenceGroup(
+                title = stringResource(MR.strings.translation_usage),
+                preferenceItems = listOf(
+                    Preference.PreferenceItem.InfoPreference(
+                        title = stringResource(MR.strings.translation_usage_hint),
+                    ),
+                    Preference.PreferenceItem.CustomPreference(
+                        title = stringResource(MR.strings.translation_usage),
+                    ) {
+                        UsageCounter()
                     },
                 ),
             ),
@@ -434,4 +450,106 @@ object SettingsTranslationScreen : SearchableSettings {
             )
         }
     }
+
+    @Composable
+    private fun UsageCounter() {
+        val context = LocalContext.current
+        val usageStore = remember { context.appGraph.translationUsageStore }
+        val scope = rememberCoroutineScope()
+        var usage by remember { mutableStateOf<TranslationUsage?>(null) }
+        var showConfirm by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { usage = usageStore.snapshot() }
+
+        val current = usage ?: return
+
+        val providerNames = mapOf(
+            TranslationProvider.GOOGLE to stringResource(MR.strings.translation_provider_google),
+            TranslationProvider.DEEPL to stringResource(MR.strings.translation_provider_deepl),
+            TranslationProvider.LIBRE_TRANSLATE to stringResource(MR.strings.translation_provider_libre),
+            TranslationProvider.OPENAI to stringResource(MR.strings.translation_provider_openai),
+            TranslationProvider.GEMINI to stringResource(MR.strings.translation_provider_gemini),
+            TranslationProvider.CLAUDE to stringResource(MR.strings.translation_provider_claude),
+            TranslationProvider.ON_DEVICE to stringResource(MR.strings.translation_provider_on_device),
+        )
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            if (current.month.requests == 0L) {
+                UsageLine(text = stringResource(MR.strings.translation_usage_empty))
+            } else {
+                UsageLine(
+                    text = stringResource(
+                        MR.strings.translation_usage_today,
+                        current.today.requests.counted(),
+                        current.today.characters.counted(),
+                    ),
+                )
+                UsageLine(
+                    text = stringResource(
+                        MR.strings.translation_usage_month,
+                        current.month.requests.counted(),
+                        current.month.characters.counted(),
+                    ),
+                )
+                current.month.byProvider.forEach { (provider, counts) ->
+                    val name = providerNames[provider] ?: provider.name
+                    val quota = usageStore.monthlyFreeQuota(provider)
+                    val detail = if (quota == null) {
+                        stringResource(
+                            MR.strings.translation_usage_provider,
+                            counts.requests.counted(),
+                            counts.characters.counted(),
+                        )
+                    } else {
+                        stringResource(
+                            MR.strings.translation_usage_quota,
+                            counts.characters.counted(),
+                            quota.counted(),
+                        )
+                    }
+                    UsageLine(text = "$name · $detail")
+                }
+            }
+            TextButton(onClick = { showConfirm = true }, enabled = current.month.requests > 0) {
+                Text(text = stringResource(MR.strings.translation_usage_reset))
+            }
+        }
+
+        if (showConfirm) {
+            AlertDialog(
+                onDismissRequest = { showConfirm = false },
+                title = { Text(text = stringResource(MR.strings.translation_usage_reset)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showConfirm = false
+                            scope.launch {
+                                usageStore.reset()
+                                usage = usageStore.snapshot()
+                                context.toast(MR.strings.translation_usage_reset_done)
+                            }
+                        },
+                    ) {
+                        Text(text = stringResource(MR.strings.translation_usage_reset))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showConfirm = false }) {
+                        Text(text = stringResource(MR.strings.action_cancel))
+                    }
+                },
+            )
+        }
+    }
+
+    @Composable
+    private fun UsageLine(text: String) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+
+    /** Thousands separated, so half a million characters reads as a number and not a wall of digits. */
+    private fun Long.counted(): String = NumberFormat.getIntegerInstance().format(this)
 }
