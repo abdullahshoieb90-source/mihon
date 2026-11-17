@@ -676,7 +676,9 @@ class MainActivity : BaseActivity() {
 }
 
 // Splash screen
-private const val SPLASH_MIN_DURATION = 500 // ms
+// The splash is only held long enough to hide the gap before the first frame; half a second of it on every
+// launch was the slowest part of opening the app.
+private const val SPLASH_MIN_DURATION = 200 // ms
 private const val SPLASH_MAX_DURATION = 5000 // ms
 private const val SPLASH_EXIT_ANIM_DURATION = 400L // ms
 

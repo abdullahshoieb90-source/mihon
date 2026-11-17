@@ -30,6 +30,7 @@ import eu.kanade.tachiyomi.data.translation.GlossaryStore
 import eu.kanade.tachiyomi.data.translation.TranslationCacheStore
 import eu.kanade.tachiyomi.data.translation.TranslationLearningWorker
 import eu.kanade.tachiyomi.data.translation.TranslationMemoryStore
+import eu.kanade.tachiyomi.data.translation.TranslationUsageStore
 import eu.kanade.tachiyomi.data.updater.AppUpdateChecker
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.extension.util.ExtensionInstallActivity
@@ -103,6 +104,7 @@ interface AppGraph : ViewModelGraph {
     val translationMemoryStore: TranslationMemoryStore
     val glossaryStore: GlossaryStore
     val translationCacheStore: TranslationCacheStore
+    val translationUsageStore: TranslationUsageStore
 
     val crashLogUtil: CrashLogUtil
 
