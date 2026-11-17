@@ -113,6 +113,16 @@ android {
 
             matchingFallbacks.addAll(commonMatchingFallbacks)
         }
+        // What the fork ships: an optimized build that keeps the debug identity, so it installs over an
+        // existing debug install with its data and gets ART precompilation plus the baseline profile.
+        create("optimized") {
+            initWith(release)
+
+            applicationIdSuffix = ".dev"
+            manifestPlaceholders["appLabel"] = "Mihon Dev"
+
+            matchingFallbacks.addAll(commonMatchingFallbacks)
+        }
 
         if (Config.includeTelemetry) {
             configureEach {
@@ -434,7 +444,8 @@ androidComponents {
         variant.buildConfigField("String", "COMMIT_SHA", latestCommitSha.map { "\"$it\"" })
         variant.buildConfigField("String", "BUILD_TIME", buildTime.map { "\"$it\"" })
 
-        if (isUnstableBuild) {
+        // Like the unstable builds, the optimized one is a per-commit build rather than a tagged release
+        if (isUnstableBuild || variant.buildType == "optimized") {
             variant.outputs.forEach { output ->
                 val versionName = output.versionName.get()
                 output.versionName.set(latestCommitCount.map { "$versionName-$it" })

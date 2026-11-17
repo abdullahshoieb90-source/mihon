@@ -33,6 +33,13 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
+      # A runner starts without a debug keystore, and the one AGP then generates is a new key on every
+      # run, so each build refused to install over the last one. Use the committed dev key instead.
+      - name: Use the repository's debug signing key
+        run: |-
+          mkdir -p ~/.android
+          cp .github/debug.keystore ~/.android/debug.keystore
+
       # Formatting is fixed here rather than reported: the repository's own workflow runs
       # spotlessCheck, and a stray space there shouldn't send anyone hunting through logs.
       - name: Apply code format
@@ -118,6 +125,27 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      # The build the fork actually ships. Built here too, so a change that only breaks minification
+      # is caught on the branch instead of on a release.
+      - name: Build optimized APK
+        run: |-
+          set -o pipefail
+          ./gradlew assembleOptimized -Pdist=local --stacktrace 2>&1 | tee build-optimized.log
+
+      - name: Verify optimized APK identity
+        run: |-
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | tail -1)
+          APK=app/build/outputs/apk/optimized/app-arm64-v8a-optimized.apk
+          "$AAPT" dump badging "$APK" | grep -E "^(package|application-label|sdkVersion|targetSdkVersion)"
+
+      - name: Upload optimized APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: apk-optimized-arm64
+          path: app/build/outputs/apk/optimized/app-arm64-v8a-optimized.apk
+          if-no-files-found: error
+          retention-days: 30
+
       # Kept after the APK steps so a formatting nit never costs you the build.
       - name: Check code format
         id: spotless
@@ -154,7 +182,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
-          rm -f spotless.log build.log
+          rm -f spotless.log build.log build-optimized.log
           if [ -z "$(git status --porcelain)" ]; then
             echo "nothing to format"
             exit 0
