@@ -16,7 +16,9 @@ import android.view.View
 import eu.kanade.tachiyomi.data.translation.TranslatedPage
 import eu.kanade.tachiyomi.data.translation.TranslatedTextBlock
 import mihon.app.di.appGraph
+import tachiyomi.domain.translation.model.TranslatedBlockArea
 import tachiyomi.domain.translation.model.TranslationTextColor
+import tachiyomi.domain.translation.model.indexAt
 import kotlin.math.max
 import kotlin.math.min
 
@@ -41,7 +43,7 @@ class TranslationTextLayer(context: Context) : View(context) {
      * What was last drawn where, in this view's own coordinates. A long tap on the page is answered from this, so the
      * reader can show what a bubble says without guessing where the bubbles are.
      */
-    private val drawnRects = ArrayList<DrawnBlock>()
+    private val drawnRects = ArrayList<TranslatedBlockArea>()
 
     /** The blocks those areas belong to, in the same order. */
     private val drawnBlocks = ArrayList<TranslatedTextBlock>()
@@ -194,7 +196,7 @@ class TranslationTextLayer(context: Context) : View(context) {
         val top = centerY - coverHeight / 2f
 
         // Kept for long taps: a bubble answers from the area its translation actually covers, not the art's box.
-        drawnRects += DrawnBlock(left, top, left + coverWidth, top + coverHeight)
+        drawnRects += TranslatedBlockArea(left, top, left + coverWidth, top + coverHeight)
         drawnBlocks += block
 
         val chosenColor = TranslationTextColor.of(preferences.textColor.get())
@@ -280,31 +282,3 @@ class TranslationTextLayer(context: Context) : View(context) {
         private const val LUMA_THRESHOLD = 128.0
     }
 }
-
-/**
- * Where a translated block was painted on the page, in the layer's coordinates.
- *
- * Deliberately free of Android types: the hit test runs as a plain unit test, and this is the part of the reader that
- * a misplaced tap breaks silently.
- */
-internal class DrawnBlock(
-    val left: Float,
-    val top: Float,
-    val right: Float,
-    val bottom: Float,
-)
-
-/**
- * The position of the area under a point, or -1 when the point is on the art.
- *
- * [slop] widens every area: a finger covers more than a pixel, so a tap that lands just outside the lettering still
- * means the bubble it touched. Returning the position keeps this free of the page's own types, which is what lets the
- * reader's hit test be checked without a device.
- */
-internal fun List<DrawnBlock>.indexAt(x: Float, y: Float, slop: Float): Int =
-    indexOfLast { drawn ->
-        x >= drawn.left - slop &&
-            x <= drawn.right + slop &&
-            y >= drawn.top - slop &&
-            y <= drawn.bottom + slop
-    }
