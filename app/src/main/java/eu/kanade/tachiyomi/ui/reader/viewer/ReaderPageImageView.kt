@@ -41,6 +41,7 @@ import eu.kanade.tachiyomi.data.coil.ImageDecoder
 import eu.kanade.tachiyomi.data.coil.cropBorders
 import eu.kanade.tachiyomi.data.coil.webtoonStrips
 import eu.kanade.tachiyomi.data.translation.TranslatedPage
+import eu.kanade.tachiyomi.data.translation.TranslatedTextBlock
 import eu.kanade.tachiyomi.ui.reader.viewer.webtoon.WebtoonStripImageView
 import eu.kanade.tachiyomi.util.system.animatorDurationScale
 import eu.kanade.tachiyomi.util.view.isVisibleOnScreen
@@ -129,6 +130,11 @@ open class ReaderPageImageView @JvmOverloads constructor(
     open fun onViewClicked() {
         onViewClicked?.invoke()
     }
+
+    /**
+     * The block drawn under a point of this view, if a translation covers it.
+     */
+    fun translatedBlockAt(x: Float, y: Float): TranslatedTextBlock? = translationLayer?.blockAt(x, y)
 
     open fun onPageSelected(forward: Boolean) {
         with(pageView as? SubsamplingScaleImageView) {

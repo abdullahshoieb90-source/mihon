@@ -149,6 +149,26 @@ class TranslationCacheStore(
         }
     }
 
+    /**
+     * Drops one page from the saved chapter, so the next read translates it again.
+     *
+     * Used after a corrected term: the saved wording of that page is the one the reader just rejected, while the rest
+     * of the chapter is still good.
+     */
+    suspend fun invalidatePage(mangaId: Long, chapterId: Long, pageIndex: Int) = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            val file = fileFor(mangaId, chapterId)
+            val chapter = read(file) ?: return@withLock
+            val kept = chapter.pages.filterNot { it.pageIndex == pageIndex }
+            if (kept.size == chapter.pages.size) return@withLock
+            if (kept.isEmpty()) {
+                file.delete()
+            } else {
+                write(file, CachedChapter(kept))
+            }
+        }
+    }
+
     suspend fun stats(): TranslationCacheStats = withContext(Dispatchers.IO) {
         mutex.withLock {
             val files = directory().listFiles().orEmpty()

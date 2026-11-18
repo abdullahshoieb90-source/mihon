@@ -16,7 +16,9 @@ import android.view.View
 import eu.kanade.tachiyomi.data.translation.TranslatedPage
 import eu.kanade.tachiyomi.data.translation.TranslatedTextBlock
 import mihon.app.di.appGraph
+import tachiyomi.domain.translation.model.TranslatedBlockArea
 import tachiyomi.domain.translation.model.TranslationTextColor
+import tachiyomi.domain.translation.model.indexAt
 import kotlin.math.max
 import kotlin.math.min
 
@@ -32,8 +34,33 @@ class TranslationTextLayer(context: Context) : View(context) {
         set(value) {
             field = value
             lightCache.clear()
+            drawnRects.clear()
+            drawnBlocks.clear()
             invalidate()
         }
+
+    /**
+     * What was last drawn where, in this view's own coordinates. A long tap on the page is answered from this, so the
+     * reader can show what a bubble says without guessing where the bubbles are.
+     */
+    private val drawnRects = ArrayList<TranslatedBlockArea>()
+
+    /** The blocks those areas belong to, in the same order. */
+    private val drawnBlocks = ArrayList<TranslatedTextBlock>()
+
+    /**
+     * The translation under a point of this view, or null when the point is on the art instead of a bubble.
+     *
+     * Every caller passes the point already mapped into the page view: the readers scale their pages above it, so a
+     * point measured here is the one the drawing used.
+     *
+     * The areas are widened by a few density points: a finger covers more than a pixel, so a tap that lands just
+     * outside the lettering still means the bubble it touched.
+     */
+    fun blockAt(x: Float, y: Float): TranslatedTextBlock? {
+        val index = drawnRects.indexAt(x, y, TOUCH_SLOP_DP * density)
+        return if (index >= 0) drawnBlocks.getOrNull(index) else null
+    }
 
     /**
      * Maps a point of the page bitmap into this view. Zoomed readers need it; fit-width readers can leave it null.
@@ -95,6 +122,8 @@ class TranslationTextLayer(context: Context) : View(context) {
         val baseTextSize = (reference * LINE_TO_TEXT_RATIO * scale)
             .coerceIn(MIN_TEXT_SIZE_DP * density, MAX_TEXT_SIZE_DP * density)
 
+        drawnRects.clear()
+        drawnBlocks.clear()
         placed.forEach { (block, box) ->
             drawBlock(canvas, block, bitmap, page.previewScale, box, margin, baseTextSize)
         }
@@ -165,6 +194,10 @@ class TranslationTextLayer(context: Context) : View(context) {
 
         val left = centerX - coverWidth / 2f
         val top = centerY - coverHeight / 2f
+
+        // Kept for long taps: a bubble answers from the area its translation actually covers, not the art's box.
+        drawnRects += TranslatedBlockArea(left, top, left + coverWidth, top + coverHeight)
+        drawnBlocks += block
 
         val chosenColor = TranslationTextColor.of(preferences.textColor.get())
         // Without a fixed colour the plate follows the page: a white bubble gets a white plate and black lettering.
@@ -240,6 +273,7 @@ class TranslationTextLayer(context: Context) : View(context) {
     }
 
     companion object {
+        private const val TOUCH_SLOP_DP = 8f
         private const val MIN_TEXT_SIZE_DP = 9f
         private const val MAX_TEXT_SIZE_DP = 28f
         private const val LINE_TO_TEXT_RATIO = 0.72f

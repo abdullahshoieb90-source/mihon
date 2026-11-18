@@ -73,12 +73,14 @@ import eu.kanade.presentation.reader.ReaderNavigationOverlayState
 import eu.kanade.presentation.reader.ReaderPageActionsDialog
 import eu.kanade.presentation.reader.ReaderPageIndicator
 import eu.kanade.presentation.reader.ReadingModeSelectDialog
+import eu.kanade.presentation.reader.TranslationBlockDialog
 import eu.kanade.presentation.reader.appbars.ReaderAppBars
 import eu.kanade.presentation.reader.components.ChapterNavigatorType
 import eu.kanade.presentation.reader.settings.ReaderSettingsDialog
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.notification.NotificationReceiver
 import eu.kanade.tachiyomi.data.notification.Notifications
+import eu.kanade.tachiyomi.data.translation.TranslatedTextBlock
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
 import eu.kanade.tachiyomi.ui.main.MainActivity
@@ -280,6 +282,16 @@ class ReaderActivity : BaseActivity() {
                             Text(stringResource(MR.strings.loading))
                         }
                     },
+                )
+            }
+
+            // A bubble the reader long-tapped explains itself in its own sheet; it doesn't take over the page menu.
+            val translationBlock by viewModel.translationBlock.collectAsState()
+            translationBlock?.let { block ->
+                TranslationBlockDialog(
+                    onDismissRequest = viewModel::closeTranslationBlockDialog,
+                    block = block.block,
+                    onRetranslatePage = viewModel::retranslateBlockPage,
                 )
             }
 
@@ -781,6 +793,14 @@ class ReaderActivity : BaseActivity() {
      */
     fun onPageLongTap(page: ReaderPage) {
         viewModel.openPageDialog(page)
+    }
+
+    /**
+     * Called from the viewer when a long tap landed on a translation drawn over the page instead of the art: the
+     * reader gets the original and the translation side by side, and can keep the wording it likes.
+     */
+    fun onTranslationLongTap(block: TranslatedTextBlock, pageIndex: Int) {
+        viewModel.openTranslationBlockDialog(block, pageIndex)
     }
 
     /**

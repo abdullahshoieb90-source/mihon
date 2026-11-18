@@ -131,7 +131,21 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
             if (activity.viewModel.state.value.menuVisible || general.longTapEnabled) {
                 val item = adapter.items.getOrNull(pager.currentItem)
                 if (item is ReaderPage) {
-                    activity.onPageLongTap(item)
+                    // A bubble the reader tapped on says more than the page's menu does: it shows the original next to
+                    // the translation and lets the wording be kept. Anywhere else keeps the page menu.
+                    val holder = pager.children
+                        .filterIsInstance<PagerPageHolder>()
+                        .firstOrNull { view -> view.item == item }
+                    // The touch is measured against the pager; the bubbles were drawn against the page view.
+                    val block = holder?.translatedBlockAt(
+                        it.x - (holder?.left ?: 0),
+                        it.y - (holder?.top ?: 0),
+                    )
+                    if (block != null) {
+                        activity.onTranslationLongTap(block, item.index)
+                    } else {
+                        activity.onPageLongTap(item)
+                    }
                     return@f true
                 }
             }
