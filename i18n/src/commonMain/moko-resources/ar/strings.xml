@@ -1108,4 +1108,12 @@
     <string name="translation_usage_quota">%1$s من %2$s من الحد المجاني التقريبي</string>
     <string name="translation_usage_reset">تصفير العدّاد</string>
     <string name="translation_usage_reset_done">تم تصفير العدّاد</string>
+
+    <string name="novels">الروايات</string>
+    <string name="novel_source_hindawi">هنداوي</string>
+    <string name="novel_source_summary">تصفّح الروايات العربية واقرأ فصولها عبر الإنترنت</string>
+    <string name="novel_empty_catalogue">لم يُعثر على روايات في هذه الصفحة</string>
+    <string name="novel_chapter_empty">لم يُعثر على نص للقراءة في هذا الفصل</string>
+    <string name="novel_load_failed">تعذّر تحميل هذه الصفحة من هنداوي</string>
+    <string name="novel_forget_position">مسح موضع القراءة المحفوظ</string>
 </resources>

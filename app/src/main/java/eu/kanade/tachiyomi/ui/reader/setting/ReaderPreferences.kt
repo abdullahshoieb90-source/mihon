@@ -6,8 +6,10 @@ import dev.icerock.moko.resources.StringResource
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import eu.kanade.tachiyomi.data.novel.NovelPosition
 import eu.kanade.tachiyomi.ui.reader.viewer.webgpu.WebGpuShader
 import eu.kanade.tachiyomi.ui.reader.viewer.webgpu.WebGpuShaders
+import kotlinx.serialization.json.Json
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.getEnum
@@ -21,6 +23,13 @@ class ReaderPreferences(
 ) {
 
     // region General
+
+    internal val lastNovelPosition: Preference<NovelPosition?> = preferenceStore.getObjectFromString(
+        Preference.appStateKey("last_hindawi_novel"),
+        null,
+        { Json.encodeToString(it) },
+        { Json.decodeFromString<NovelPosition?>(it) },
+    )
 
     val pageTransitions: Preference<Boolean> = preferenceStore.getBoolean("pref_enable_transitions_key", true)
 

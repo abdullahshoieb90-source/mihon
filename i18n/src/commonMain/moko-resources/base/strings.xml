@@ -1215,4 +1215,12 @@
     <string name="translation_usage_quota">%1$s of %2$s in the approximate free tier</string>
     <string name="translation_usage_reset">Reset the counter</string>
     <string name="translation_usage_reset_done">Usage counter reset</string>
+
+    <string name="novels">Novels</string>
+    <string name="novel_source_hindawi">Hindawi</string>
+    <string name="novel_source_summary">Browse Arabic novels and read chapters online</string>
+    <string name="novel_empty_catalogue">No novels found on this page</string>
+    <string name="novel_chapter_empty">No readable text found in this chapter</string>
+    <string name="novel_load_failed">Could not load this page from Hindawi</string>
+    <string name="novel_forget_position">Forget reading position</string>
 </resources>
