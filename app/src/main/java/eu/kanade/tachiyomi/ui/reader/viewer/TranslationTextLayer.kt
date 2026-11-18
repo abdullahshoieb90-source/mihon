@@ -33,6 +33,7 @@ class TranslationTextLayer(context: Context) : View(context) {
             field = value
             lightCache.clear()
             drawnRects.clear()
+            drawnBlocks.clear()
             invalidate()
         }
 
@@ -41,6 +42,9 @@ class TranslationTextLayer(context: Context) : View(context) {
      * reader can show what a bubble says without guessing where the bubbles are.
      */
     private val drawnRects = ArrayList<DrawnBlock>()
+
+    /** The blocks those areas belong to, in the same order. */
+    private val drawnBlocks = ArrayList<TranslatedTextBlock>()
 
     /**
      * The translation under a point of this view, or null when the point is on the art instead of a bubble.
@@ -51,7 +55,10 @@ class TranslationTextLayer(context: Context) : View(context) {
      * The areas are widened by a few density points: a finger covers more than a pixel, so a tap that lands just
      * outside the lettering still means the bubble it touched.
      */
-    fun blockAt(x: Float, y: Float): TranslatedTextBlock? = drawnRects.blockAt(x, y, TOUCH_SLOP_DP * density)
+    fun blockAt(x: Float, y: Float): TranslatedTextBlock? {
+        val index = drawnRects.indexAt(x, y, TOUCH_SLOP_DP * density)
+        return if (index >= 0) drawnBlocks.getOrNull(index) else null
+    }
 
     /**
      * Maps a point of the page bitmap into this view. Zoomed readers need it; fit-width readers can leave it null.
@@ -114,6 +121,7 @@ class TranslationTextLayer(context: Context) : View(context) {
             .coerceIn(MIN_TEXT_SIZE_DP * density, MAX_TEXT_SIZE_DP * density)
 
         drawnRects.clear()
+        drawnBlocks.clear()
         placed.forEach { (block, box) ->
             drawBlock(canvas, block, bitmap, page.previewScale, box, margin, baseTextSize)
         }
@@ -186,7 +194,8 @@ class TranslationTextLayer(context: Context) : View(context) {
         val top = centerY - coverHeight / 2f
 
         // Kept for long taps: a bubble answers from the area its translation actually covers, not the art's box.
-        drawnRects += DrawnBlock(block, left, top, left + coverWidth, top + coverHeight)
+        drawnRects += DrawnBlock(left, top, left + coverWidth, top + coverHeight)
+        drawnBlocks += block
 
         val chosenColor = TranslationTextColor.of(preferences.textColor.get())
         // Without a fixed colour the plate follows the page: a white bubble gets a white plate and black lettering.
@@ -272,9 +281,13 @@ class TranslationTextLayer(context: Context) : View(context) {
     }
 }
 
-/** A block and the area its translation was painted in, in the layer's coordinates. */
+/**
+ * Where a translated block was painted on the page, in the layer's coordinates.
+ *
+ * Deliberately free of Android types: the hit test runs as a plain unit test, and this is the part of the reader that
+ * a misplaced tap breaks silently.
+ */
 internal class DrawnBlock(
-    val block: TranslatedTextBlock,
     val left: Float,
     val top: Float,
     val right: Float,
@@ -282,15 +295,16 @@ internal class DrawnBlock(
 )
 
 /**
- * The block drawn under a point, or null when the point is on the art.
+ * The position of the area under a point, or -1 when the point is on the art.
  *
  * [slop] widens every area: a finger covers more than a pixel, so a tap that lands just outside the lettering still
- * means the bubble it touched.
+ * means the bubble it touched. Returning the position keeps this free of the page's own types, which is what lets the
+ * reader's hit test be checked without a device.
  */
-internal fun List<DrawnBlock>.blockAt(x: Float, y: Float, slop: Float): TranslatedTextBlock? =
-    lastOrNull { drawn ->
+internal fun List<DrawnBlock>.indexAt(x: Float, y: Float, slop: Float): Int =
+    indexOfLast { drawn ->
         x >= drawn.left - slop &&
             x <= drawn.right + slop &&
             y >= drawn.top - slop &&
             y <= drawn.bottom + slop
-    }?.block
+    }
