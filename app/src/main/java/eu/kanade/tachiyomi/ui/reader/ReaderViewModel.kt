@@ -1101,11 +1101,10 @@ class ReaderViewModel(
      * This is what makes the sheet worth opening: change a term, translate again, and the page reads the way it should.
      */
     fun retranslateBlockPage() {
-        val page = (
-            mutableTranslationBlock.value?.let { block ->
-                state.value.currentChapter?.pages?.firstOrNull { it.index == block.pageIndex }
-            }
-            ) ?: return
+        // The sheet names the page it was opened on, so the translation starts from the page the reader is looking at
+        // even if a new chapter finished loading in the meantime.
+        val pageIndexInSheet = mutableTranslationBlock.value?.pageIndex ?: return
+        val page = state.value.currentChapter?.pages?.firstOrNull { it.index == pageIndexInSheet } ?: return
         mutableTranslationBlock.value = null
 
         val pageIndex = page.index
