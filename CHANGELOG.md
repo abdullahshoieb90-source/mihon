@@ -12,6 +12,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 ### Added
+- Translate a downloaded chapter ahead of reading it, from the chapter's selection bar or as a swipe action, in the background with a progress notification and a cancel action
+  - Refuses chapters that are not downloaded and says why, and leaves archived (CBZ) chapters alone
+  - A page that fails is skipped instead of ending the run
 - Add page and title translation with a source and target language, choosing between Google Translate, DeepL and LibreTranslate (Settings → Translation)
   - Read the text on a page on-device and show the translation over the original bubbles
   - Translate a title and its description from the manga screen

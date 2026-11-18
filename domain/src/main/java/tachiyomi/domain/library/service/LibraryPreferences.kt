@@ -230,6 +230,9 @@ class LibraryPreferences(
         ToggleRead,
         ToggleBookmark,
         Download,
+
+        /** Translates the whole downloaded chapter before it is opened. */
+        TranslateAhead,
         Disabled,
     }
 

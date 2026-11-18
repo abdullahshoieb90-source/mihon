@@ -46,6 +46,7 @@ import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
+import eu.kanade.tachiyomi.data.translation.ChapterTranslationWorker
 import eu.kanade.tachiyomi.data.translation.TranslationError
 import eu.kanade.tachiyomi.data.translation.TranslationException
 import eu.kanade.tachiyomi.data.translation.TranslationLearningState
@@ -674,6 +675,9 @@ class MangaViewModel(
                     action = downloadAction,
                 )
             }
+            LibraryPreferences.ChapterSwipeAction.TranslateAhead -> {
+                translateChapterAhead(chapterItem)
+            }
             LibraryPreferences.ChapterSwipeAction.Disabled -> throw IllegalStateException()
         }
     }
@@ -761,6 +765,24 @@ class MangaViewModel(
                 deleteChapters(items.map { it.chapter })
             }
         }
+    }
+
+    /**
+     * Translates a whole chapter before it is read.
+     *
+     * It only works on a downloaded chapter, because the pages have to be on the phone: the work then runs in the
+     * background, page by page, and lands in the same cache the reader paints from. Opening the chapter afterwards
+     * shows every page translated at once instead of waiting for the recognizer on each turn of the page.
+     */
+    fun translateChapterAhead(chapterItem: ChapterList.Item) {
+        val manga = manga ?: return
+        if (chapterItem.downloadState != Download.State.DOWNLOADED) {
+            // Told where it is: the button is in the chapter's own menu, so the reason has to be in the reader's words.
+            context.toast(MR.strings.translation_prefetch_not_downloaded)
+            return
+        }
+        ChapterTranslationWorker.start(context, manga.id, chapterItem.id)
+        context.toast(context.stringResource(MR.strings.translation_prefetch_queued, chapterItem.chapter.name))
     }
 
     fun runDownloadAction(action: DownloadAction) {

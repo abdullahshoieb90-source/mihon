@@ -116,6 +116,7 @@ fun MangaScreen(
     onLearnTranslationClicked: () -> Unit,
 
     // For bottom action menu
+    onTranslateChapterAhead: (ChapterList.Item) -> Unit,
     onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
     onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
@@ -166,6 +167,7 @@ fun MangaScreen(
             onEditNotesClicked = onEditNotesClicked,
             onTranslateClicked = onTranslateClicked,
             onLearnTranslationClicked = onLearnTranslationClicked,
+            onTranslateChapterAhead = onTranslateChapterAhead,
             onMultiBookmarkClicked = onMultiBookmarkClicked,
             onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
             onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
@@ -205,6 +207,7 @@ fun MangaScreen(
             onEditNotesClicked = onEditNotesClicked,
             onTranslateClicked = onTranslateClicked,
             onLearnTranslationClicked = onLearnTranslationClicked,
+            onTranslateChapterAhead = onTranslateChapterAhead,
             onMultiBookmarkClicked = onMultiBookmarkClicked,
             onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
             onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
@@ -256,6 +259,7 @@ private fun MangaScreenSmallImpl(
     onLearnTranslationClicked: () -> Unit,
 
     // For bottom action menu
+    onTranslateChapterAhead: (ChapterList.Item) -> Unit,
     onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
     onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
@@ -323,6 +327,7 @@ private fun MangaScreenSmallImpl(
         bottomBar = {
             SharedMangaBottomActionMenu(
                 selected = state.selectedChapters,
+                onTranslateChapterAhead = onTranslateChapterAhead,
                 onMultiBookmarkClicked = onMultiBookmarkClicked,
                 onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
                 onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
@@ -493,6 +498,7 @@ fun MangaScreenLargeImpl(
     onLearnTranslationClicked: () -> Unit,
 
     // For bottom action menu
+    onTranslateChapterAhead: (ChapterList.Item) -> Unit,
     onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
     onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
@@ -555,6 +561,7 @@ fun MangaScreenLargeImpl(
             // navigation bar inset under the FAB
             SharedMangaBottomActionMenu(
                 selected = state.selectedChapters,
+                onTranslateChapterAhead = onTranslateChapterAhead,
                 onMultiBookmarkClicked = onMultiBookmarkClicked,
                 onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
                 onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
@@ -689,6 +696,7 @@ fun MangaScreenLargeImpl(
 @Composable
 private fun SharedMangaBottomActionMenu(
     selected: List<ChapterList.Item>,
+    onTranslateChapterAhead: (ChapterList.Item) -> Unit,
     onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
     onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
     onMarkPreviousAsReadClicked: (Chapter) -> Unit,
@@ -719,6 +727,12 @@ private fun SharedMangaBottomActionMenu(
             onDownloadChapter!!(selected.toList(), ChapterDownloadAction.START)
         }.takeIf {
             onDownloadChapter != null && selected.fastAny { it.downloadState != Download.State.DOWNLOADED }
+        },
+        onTranslateAheadClicked = {
+            onTranslateChapterAhead(selected[0])
+        }.takeIf {
+            // One chapter, and it is on the phone: translating ahead reads the pages from the device.
+            selected.size == 1 && selected[0].downloadState == Download.State.DOWNLOADED
         },
         onDeleteClicked = {
             onMultiDeleteClicked(selected.fastMap { it.chapter })

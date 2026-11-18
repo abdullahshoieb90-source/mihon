@@ -171,6 +171,7 @@ class MangaScreen(
                 viewModel.translateManga()
             },
             onLearnTranslationClicked = viewModel::showLearningDialog,
+            onTranslateChapterAhead = viewModel::translateChapterAhead,
             onMultiBookmarkClicked = viewModel::bookmarkChapters,
             onMultiMarkAsReadClicked = viewModel::markChaptersRead,
             onMarkPreviousAsReadClicked = viewModel::markPreviousChapterRead,

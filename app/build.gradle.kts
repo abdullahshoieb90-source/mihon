@@ -33,7 +33,7 @@ val keystorePropertiesFile = layout.settingsDirectory.file("keystore.properties"
 
 // The version this fork ships, and the one its release tags carry. The updater compares the two, and the
 // release workflow refuses to publish a tag that doesn't match, so they can't drift apart.
-val devVersionName = "1.19.0"
+val devVersionName = "1.20.0"
 
 android {
     namespace = "eu.kanade.tachiyomi"

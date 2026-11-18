@@ -35,6 +35,7 @@ import mihon.icons.materialsymbols.rounded.Check
 import mihon.icons.materialsymbols.rounded.Delete
 import mihon.icons.materialsymbols.rounded.Download
 import mihon.icons.materialsymbols.rounded.FileDownloadOff
+import mihon.icons.materialsymbols.rounded.Public
 import mihon.icons.materialsymbols.rounded.RemoveDone
 import mihon.icons.materialsymbols.roundedfilled.Bookmark
 import mihon.icons.materialsymbols.roundedfilled.Circle
@@ -209,6 +210,11 @@ private fun getSwipeAction(
                 Download.State.QUEUE, Download.State.DOWNLOADING -> MaterialSymbols.Rounded.FileDownloadOff
                 Download.State.DOWNLOADED -> MaterialSymbols.Rounded.Delete
             },
+            background = background,
+            onSwipe = onSwipe,
+        )
+        LibraryPreferences.ChapterSwipeAction.TranslateAhead -> swipeAction(
+            icon = MaterialSymbols.Rounded.Public,
             background = background,
             onSwipe = onSwipe,
         )
