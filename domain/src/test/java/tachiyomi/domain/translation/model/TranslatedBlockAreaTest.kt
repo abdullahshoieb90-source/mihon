@@ -29,11 +29,19 @@ class TranslatedBlockAreaTest {
 
     @Test
     fun `a near miss still counts, because a finger is not a pixel`() {
+        val one = listOf(first)
+        // The bubble ends at y = 60; a tap just below it is still meant for it.
+        assertEquals(0, one.indexAt(50f, 64f, slop = 8f))
+        // With a slop narrower than the miss, the same point is on the art.
+        assertEquals(-1, one.indexAt(50f, 64f, slop = 2f))
+    }
+
+    @Test
+    fun `the gap between two bubbles answers with the nearer one once the slop reaches it`() {
         val areas = listOf(first, second)
-        // The first bubble ends at y = 60; a tap just below it is still meant for it.
-        assertEquals(0, areas.indexAt(50f, 64f, slop = 8f))
-        // Without the slop the same point falls between the two bubbles.
-        assertEquals(-1, areas.indexAt(65f, 65f, slop = 2f))
+        // y = 64 is 4 points below the first bubble and 6 above the second: both areas cover it with a wide slop, and
+        // the one drawn last wins.
+        assertEquals(1, areas.indexAt(50f, 64f, slop = 8f))
     }
 
     @Test
