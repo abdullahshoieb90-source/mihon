@@ -1216,6 +1216,17 @@
     <string name="translation_usage_reset">Reset the counter</string>
     <string name="translation_usage_reset_done">Usage counter reset</string>
 
+    <string name="translation_block_original">Original</string>
+    <string name="translation_block_translation">Translation</string>
+    <string name="translation_block_copy">Copy the translation</string>
+    <string name="translation_block_copied">Copied</string>
+    <string name="translation_block_keep">Keep this wording</string>
+    <string name="translation_block_keep_hint">Adds the original line to the glossary, so every translation of this series keeps it from now on.</string>
+    <string name="translation_block_kept">Saved to the glossary</string>
+    <string name="translation_block_retranslate">Translate again</string>
+    <string name="translation_block_retranslating">Translating again…</string>
+    <string name="translation_block_open_glossary">Glossary</string>
+
     <string name="novels">Novels</string>
     <string name="novel_source_hindawi">Hindawi</string>
     <string name="novel_source_summary">Browse Arabic novels and read chapters online</string>

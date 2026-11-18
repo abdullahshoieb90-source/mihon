@@ -34,6 +34,8 @@ import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
 import eu.kanade.tachiyomi.data.translation.PageTranslator
 import eu.kanade.tachiyomi.data.translation.TranslatedPage
+import eu.kanade.tachiyomi.data.translation.TranslatedTextBlock
+import eu.kanade.tachiyomi.data.translation.TranslationCacheStore
 import eu.kanade.tachiyomi.data.translation.TranslationError
 import eu.kanade.tachiyomi.data.translation.TranslationException
 import eu.kanade.tachiyomi.source.Source
@@ -139,6 +141,7 @@ class ReaderViewModel(
     private val downloadCache: DownloadCache,
     private val pageTranslator: PageTranslator,
     private val translationPreferences: TranslationPreferences,
+    private val translationCache: TranslationCacheStore,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -177,6 +180,14 @@ class ReaderViewModel(
 
     private val mutableTranslationMode = MutableStateFlow(false)
     val translationMode: StateFlow<Boolean> = mutableTranslationMode.asStateFlow()
+
+    private val mutableTranslationBlock = MutableStateFlow<TranslationBlock?>(null)
+
+    /**
+     * The bubble a long tap landed on, with the page it belongs to, so the reader can show what it said and keep the
+     * wording. Null while the sheet is closed.
+     */
+    val translationBlock: StateFlow<TranslationBlock?> = mutableTranslationBlock.asStateFlow()
 
     private val translationJobs = mutableMapOf<Int, Job>()
 
@@ -1074,6 +1085,45 @@ class ReaderViewModel(
     }
 
     /**
+     * Opens the sheet for a translated bubble: the original line next to its translation.
+     */
+    fun openTranslationBlockDialog(block: TranslatedTextBlock, pageIndex: Int) {
+        mutableTranslationBlock.value = TranslationBlock(block = block, pageIndex = pageIndex)
+    }
+
+    fun closeTranslationBlockDialog() {
+        mutableTranslationBlock.value = null
+    }
+
+    /**
+     * Translates the page again from scratch, ignoring what was saved for it.
+     *
+     * This is what makes the sheet worth opening: change a term, translate again, and the page reads the way it should.
+     */
+    fun retranslateBlockPage() {
+        val page = (mutableTranslationBlock.value?.let { block ->
+            state.value.currentChapter?.pages?.firstOrNull { it.index == block.pageIndex }
+        }) ?: return
+        mutableTranslationBlock.value = null
+
+        val pageIndex = page.index
+        translationJobs.remove(pageIndex)?.cancel()
+        mutableTranslations.update { current -> LinkedHashMap(current).apply { remove(pageIndex) } }
+        untranslatablePages.remove(pageIndex)
+
+        viewModelScope.launch {
+            // What was saved for this page has the old wording in it; leaving it would have the very next read show the
+            // text the reader just corrected.
+            withContext(Dispatchers.IO) {
+                if (mangaId > 0 && chapterId > 0) {
+                    translationCache.invalidatePage(mangaId, chapterId, pageIndex)
+                }
+            }
+            translatePageInline(page)
+        }
+    }
+
+    /**
      * Keeps the pages around the reader and drops the ones left behind: a translated page holds its own bitmap.
      */
     private fun storeTranslation(index: Int, page: TranslatedPage) {
@@ -1354,6 +1404,14 @@ class ReaderViewModel(
         val totalPages: Int
             get() = currentChapter?.pages?.size ?: -1
     }
+
+    /**
+     * A translated bubble the reader asked about, and the page it was found on.
+     */
+    data class TranslationBlock(
+        val block: TranslatedTextBlock,
+        val pageIndex: Int,
+    )
 
     sealed interface TranslationState {
         data object Idle : TranslationState

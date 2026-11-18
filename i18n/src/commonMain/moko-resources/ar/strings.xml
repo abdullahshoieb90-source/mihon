@@ -1109,6 +1109,17 @@
     <string name="translation_usage_reset">تصفير العدّاد</string>
     <string name="translation_usage_reset_done">تم تصفير العدّاد</string>
 
+    <string name="translation_block_original">الأصل</string>
+    <string name="translation_block_translation">الترجمة</string>
+    <string name="translation_block_copy">نسخ الترجمة</string>
+    <string name="translation_block_copied">تم النسخ</string>
+    <string name="translation_block_keep">احفظ هذه الصياغة</string>
+    <string name="translation_block_keep_hint">يضيف السطر الأصلي إلى قاموس المصطلحات، فتُستخدَم صياغته في كل ترجمات هذه السلسلة من الآن.</string>
+    <string name="translation_block_kept">حُفظت في القاموس</string>
+    <string name="translation_block_retranslate">ترجمة مرة أخرى</string>
+    <string name="translation_block_retranslating">جارٍ إعادة الترجمة…</string>
+    <string name="translation_block_open_glossary">القاموس</string>
+
     <string name="novels">الروايات</string>
     <string name="novel_source_hindawi">هنداوي</string>
     <string name="novel_source_summary">تصفّح الروايات العربية واقرأ فصولها عبر الإنترنت</string>
