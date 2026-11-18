@@ -26,6 +26,7 @@ import eu.kanade.tachiyomi.data.library.LibraryUpdateWorker
 import eu.kanade.tachiyomi.data.library.MetadataUpdateWorker
 import eu.kanade.tachiyomi.data.notification.NotificationReceiver
 import eu.kanade.tachiyomi.data.track.TrackerManager
+import eu.kanade.tachiyomi.data.translation.ChapterTranslationWorker
 import eu.kanade.tachiyomi.data.translation.GlossaryStore
 import eu.kanade.tachiyomi.data.translation.TranslationCacheStore
 import eu.kanade.tachiyomi.data.translation.TranslationLearningWorker
@@ -80,6 +81,7 @@ interface AppGraph : ViewModelGraph {
     fun inject(delayedTrackingUpdateWorker: DelayedTrackingUpdateWorker)
     fun inject(downloadWorker: DownloadWorker)
     fun inject(translationLearningWorker: TranslationLearningWorker)
+    fun inject(chapterTranslationWorker: ChapterTranslationWorker)
     fun inject(notificationReceiver: NotificationReceiver)
     fun inject(notificationReceiver: SecureActivityDelegateImpl)
     fun inject(extensionInstallActivity: ExtensionInstallActivity)

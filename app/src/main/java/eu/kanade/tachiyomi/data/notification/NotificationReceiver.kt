@@ -10,6 +10,7 @@ import dev.zacsweers.metro.Inject
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreWorker
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.library.LibraryUpdateWorker
+import eu.kanade.tachiyomi.data.translation.ChapterTranslationWorker
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.reader.ReaderActivity
 import eu.kanade.tachiyomi.util.system.cancelNotification
@@ -80,6 +81,11 @@ class NotificationReceiver : BroadcastReceiver() {
                     "application/x-protobuf+gzip",
                 )
             ACTION_CANCEL_RESTORE -> cancelRestore(context)
+            // Stop translating a chapter ahead, keeping the pages already translated
+            ACTION_CANCEL_CHAPTER_TRANSLATION -> {
+                ChapterTranslationWorker.cancel(context)
+                context.cancelNotification(Notifications.ID_CHAPTER_TRANSLATION)
+            }
             // Cancel library update and dismiss notification
             ACTION_CANCEL_LIBRARY_UPDATE -> cancelLibraryUpdate(context)
             // Mark updated manga chapters as read
@@ -222,6 +228,8 @@ class NotificationReceiver : BroadcastReceiver() {
         private const val ACTION_CANCEL_RESTORE = "$ID.$NAME.CANCEL_RESTORE"
 
         private const val ACTION_CANCEL_LIBRARY_UPDATE = "$ID.$NAME.CANCEL_LIBRARY_UPDATE"
+
+        private const val ACTION_CANCEL_CHAPTER_TRANSLATION = "$ID.$NAME.CANCEL_CHAPTER_TRANSLATION"
 
         private const val ACTION_MARK_AS_READ = "$ID.$NAME.MARK_AS_READ"
         private const val ACTION_DOWNLOAD_CHAPTER = "$ID.$NAME.ACTION_DOWNLOAD_CHAPTER"
@@ -472,6 +480,21 @@ class NotificationReceiver : BroadcastReceiver() {
         internal fun cancelLibraryUpdatePendingBroadcast(context: Context): PendingIntent {
             val intent = Intent(context, NotificationReceiver::class.java).apply {
                 action = ACTION_CANCEL_LIBRARY_UPDATE
+            }
+            return PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
+
+        /**
+         * Returns [PendingIntent] that stops the chapter being translated ahead.
+         */
+        internal fun cancelChapterTranslationPendingBroadcast(context: Context): PendingIntent {
+            val intent = Intent(context, NotificationReceiver::class.java).apply {
+                action = ACTION_CANCEL_CHAPTER_TRANSLATION
             }
             return PendingIntent.getBroadcast(
                 context,

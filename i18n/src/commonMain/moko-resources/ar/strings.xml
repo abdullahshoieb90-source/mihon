@@ -1120,6 +1120,17 @@
     <string name="translation_block_retranslating">جارٍ إعادة الترجمة…</string>
     <string name="translation_block_open_glossary">القاموس</string>
 
+    <string name="translation_prefetch">ترجمة الفصل مسبقًا</string>
+    <string name="translation_prefetch_start">ترجم مسبقًا</string>
+    <string name="translation_prefetch_queued">جارٍ ترجمة %s مسبقًا. تقدر تسيب الشاشة.</string>
+    <string name="translation_prefetch_preparing">جارٍ التحضير…</string>
+    <string name="translation_prefetch_running">صفحة %1$d من %2$d</string>
+    <string name="translation_prefetch_done">تمّت ترجمة %d صفحة</string>
+    <string name="translation_prefetch_failed">تعذّرت ترجمة هذا الفصل: %s</string>
+    <string name="translation_prefetch_not_downloaded">حمّل الفصل الأول: الترجمة المسبقة بتقرأ الصفحات من الجهاز.</string>
+    <string name="translation_prefetch_skipped_archive">الفصول المضغوطة (CBZ) مش مشمولة: صفحاتها جوّه ملف واحد.</string>
+    <string name="translation_prefetch_failed_pages">ما اتترجمش ولا صفحة من %d. راجع الاتصال وإعدادات الترجمة.</string>
+
     <string name="novels">الروايات</string>
     <string name="novel_source_hindawi">هنداوي</string>
     <string name="novel_source_summary">تصفّح الروايات العربية واقرأ فصولها عبر الإنترنت</string>

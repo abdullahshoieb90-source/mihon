@@ -69,6 +69,16 @@ object Notifications {
      */
     const val CHANNEL_TRANSLATION_LEARNING = "translation_learning_channel"
     const val ID_TRANSLATION_LEARNING = -401
+
+    /**
+     * Id used while a chapter is translated ahead of being read. It shares the channel above: both are translation
+     * work the reader started and can walk away from.
+     */
+    const val ID_CHAPTER_TRANSLATION = -403
+
+    /**
+     * Notification channel used for Incognito Mode
+     */
     const val ID_INCOGNITO_MODE = -701
 
     /**

@@ -227,6 +227,8 @@ object SettingsLibraryScreen : SearchableSettings {
                             stringResource(MR.strings.action_mark_as_read),
                         LibraryPreferences.ChapterSwipeAction.Download to
                             stringResource(MR.strings.action_download),
+                        LibraryPreferences.ChapterSwipeAction.TranslateAhead to
+                            stringResource(MR.strings.translation_prefetch),
                     ),
                     title = stringResource(MR.strings.pref_chapter_swipe_start),
                 ),
@@ -241,6 +243,8 @@ object SettingsLibraryScreen : SearchableSettings {
                             stringResource(MR.strings.action_mark_as_read),
                         LibraryPreferences.ChapterSwipeAction.Download to
                             stringResource(MR.strings.action_download),
+                        LibraryPreferences.ChapterSwipeAction.TranslateAhead to
+                            stringResource(MR.strings.translation_prefetch),
                     ),
                     title = stringResource(MR.strings.pref_chapter_swipe_end),
                 ),

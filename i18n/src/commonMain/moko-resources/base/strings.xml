@@ -1227,6 +1227,17 @@
     <string name="translation_block_retranslating">Translating again…</string>
     <string name="translation_block_open_glossary">Glossary</string>
 
+    <string name="translation_prefetch">Translate a chapter ahead</string>
+    <string name="translation_prefetch_start">Translate ahead</string>
+    <string name="translation_prefetch_queued">Translating %s ahead. You can leave this screen.</string>
+    <string name="translation_prefetch_preparing">Preparing…</string>
+    <string name="translation_prefetch_running">Page %1$d of %2$d</string>
+    <string name="translation_prefetch_done">Done: %d pages translated</string>
+    <string name="translation_prefetch_failed">Couldn't translate this chapter: %s</string>
+    <string name="translation_prefetch_not_downloaded">Download the chapter first: translating ahead reads the pages from the phone.</string>
+    <string name="translation_prefetch_skipped_archive">Archived (CBZ) chapters are left alone: their pages are packed inside one file.</string>
+    <string name="translation_prefetch_failed_pages">Couldn\'t translate any of the %d pages. Check the connection and the translation settings.</string>
+
     <string name="novels">Novels</string>
     <string name="novel_source_hindawi">Hindawi</string>
     <string name="novel_source_summary">Browse Arabic novels and read chapters online</string>
