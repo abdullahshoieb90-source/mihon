@@ -141,10 +141,7 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
                         // Same as the paged reader: a bubble explains itself, the rest of the page opens the menu.
                         val frame = child as? ReaderPageImageView
                         // The touch is measured against the list; the bubbles were drawn against the page view.
-                        val block = frame?.translatedBlockAt(
-                            event.x - child.left + frame.scrollX,
-                            event.y - child.top + frame.scrollY,
-                        )
+                        val block = frame?.translatedBlockAt(event.x - child.left, event.y - child.top)
                         if (block != null) {
                             activity.onTranslationLongTap(block, item.index)
                         } else {
