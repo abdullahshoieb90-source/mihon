@@ -92,7 +92,7 @@ class BubblePlateTest {
 
     @Test
     fun `a dark bubble is marked dark, so the lettering turns light`() {
-        val darkBubble = PageBrightness { x, y -> if (x in 100f..200f && y in 100f..160f) 0.1f else 0.85f }
+        val darkBubble = PageBrightness { x, y -> if (x in 100..200 && y in 100..160) 0.1f else 0.85f }
         val plate = detect(darkBubble, box(120f, 115f, 180f, 145f))!!
         assertTrue(plate.dark)
     }
@@ -112,7 +112,7 @@ class BubblePlateTest {
 
     @Test
     fun `the bubble colour is read from around the lettering, not from the letters`() {
-        val greyBubble = PageBrightness { x, y -> if (x in 100f..200f && y in 100f..160f) 0.5f else 0f }
+        val greyBubble = PageBrightness { x, y -> if (x in 100..200 && y in 100..160) 0.5f else 0f }
         val color = PageColor { _, _ -> 0xFF808080.toInt() }
         val plate = BubblePlateDetector.detect(
             textLeft = 120f,
