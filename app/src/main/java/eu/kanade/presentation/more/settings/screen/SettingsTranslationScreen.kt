@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
 import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationLetterCase
+import tachiyomi.domain.translation.model.TranslationPlateStyle
 import tachiyomi.domain.translation.model.TranslationProvider
 import tachiyomi.domain.translation.model.TranslationTextColor
 import tachiyomi.i18n.MR
@@ -101,6 +102,18 @@ object SettingsTranslationScreen : SearchableSettings {
                         valueText = { scale -> "$scale%" },
                         title = stringResource(MR.strings.pref_translation_text_scale),
                         subtitle = stringResource(MR.strings.pref_translation_text_scale_summary),
+                    ),
+                    Preference.PreferenceItem.ListPreference(
+                        preference = preferences.plateStyle,
+                        entries = mapOf(
+                            TranslationPlateStyle.BUBBLE to
+                                stringResource(MR.strings.translation_plate_bubble),
+                            TranslationPlateStyle.ROUNDED to
+                                stringResource(MR.strings.translation_plate_rounded),
+                            TranslationPlateStyle.BOX to
+                                stringResource(MR.strings.translation_plate_box),
+                        ),
+                        title = stringResource(MR.strings.pref_translation_plate_style),
                     ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = preferences.boldText,

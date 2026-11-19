@@ -8,6 +8,7 @@ import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.getEnum
 import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationLetterCase
+import tachiyomi.domain.translation.model.TranslationPlateStyle
 import tachiyomi.domain.translation.model.TranslationProvider
 import tachiyomi.domain.translation.model.TranslationTextColor
 import java.util.Locale
@@ -94,6 +95,11 @@ class TranslationPreferences(
     val boldText: Preference<Boolean> = preferenceStore.getBoolean(
         "pref_translation_bold",
         true,
+    )
+
+    val plateStyle: Preference<TranslationPlateStyle> = preferenceStore.getEnum(
+        "pref_translation_plate_style",
+        TranslationPlateStyle.BUBBLE,
     )
 
     val letterCase: Preference<TranslationLetterCase> = preferenceStore.getEnum(
