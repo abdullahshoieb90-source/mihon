@@ -319,7 +319,13 @@ class TranslationTextLayer(context: Context) : View(context) {
     private fun blend(color: Int, plateIsLight: Boolean): Int {
         val luma = Color.red(color) * 0.299 + Color.green(color) * 0.587 + Color.blue(color) * 0.114
         val readable = if (plateIsLight) luma >= READABLE_PLATE_LUMA else luma <= 255 - READABLE_PLATE_LUMA
-        return if (readable) color else if (plateIsLight) Color.WHITE else Color.rgb(14, 14, 14)
+        return if (readable) {
+            color
+        } else if (plateIsLight) {
+            Color.WHITE
+        } else {
+            Color.rgb(14, 14, 14)
+        }
     }
 
     /** True when the given colour is bright enough for a dark plate. */
