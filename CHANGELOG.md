@@ -12,6 +12,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 ### Added
+- Draw a translation over the bubble's own shape: the art around each block is read for its edge and colour, and the plate becomes an oval, a rounded bubble or a panel instead of always a rectangle
+  - The shape is read from the cached page thumbnail, so saved translations pick it up without being translated again
+  - New setting (Settings → Translation → Bubble shape) to follow the bubble, use a rounded box, or keep the plain box
 - Translate a downloaded chapter ahead of reading it, from the chapter's selection bar or as a swipe action, in the background with a progress notification and a cancel action
   - Refuses chapters that are not downloaded and says why, and leaves archived (CBZ) chapters alone
   - A page that fails is skipped instead of ending the run
