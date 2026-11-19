@@ -22,9 +22,9 @@ jobs:
         run: |
           set +e
           ./gradlew spotlessCheck --console=plain > /tmp/spotless.log 2>&1
-          code=$?
-          echo "exit=$code"
-          # The violation itself: a file name, then the offending line with a caret under it.
-          grep -nE "TranslationTextLayer|\.kt$|^\s*[0-9]+ \||\.kt:[0-9]+" /tmp/spotless.log | head -60 | tee /tmp/short.log
+          echo "exit=$?"
+          # The block after the file name holds the offending lines, with a caret under the exact column.
+          sed -n '/had format violations/,/Run .\/gradlew spotlessApply/p' /tmp/spotless.log | head -40 > /tmp/short.log
+          cat /tmp/short.log
           while IFS= read -r line; do echo "::error::$line"; done < /tmp/short.log
           exit 0
