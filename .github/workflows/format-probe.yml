@@ -24,6 +24,7 @@ jobs:
           ./gradlew spotlessCheck --console=plain > /tmp/spotless.log 2>&1
           code=$?
           echo "exit=$code"
-          grep -E "^\s+[-+ ].*\.kt|violat|Step .* failed|Unexpected" /tmp/spotless.log | head -50 | tee /tmp/short.log
+          # The violation itself: a file name, then the offending line with a caret under it.
+          grep -nE "TranslationTextLayer|\.kt$|^\s*[0-9]+ \||\.kt:[0-9]+" /tmp/spotless.log | head -60 | tee /tmp/short.log
           while IFS= read -r line; do echo "::error::$line"; done < /tmp/short.log
           exit 0
