@@ -76,10 +76,11 @@ class BubblePlateTest {
         // The whole page is one colour, so nothing tells the walk where to stop: the search distance does.
         val endless = page { _, _ -> true }
         val plate = detect(endless, box(120f, 115f, 180f, 145f))!!
-        assertTrue(plate.width <= 60f + 2f * 48f + 1f)
-        assertTrue(plate.height <= 30f + 2f * 48f + 1f)
-        // Still tighter than the page it was read from.
-        assertTrue(plate.width < width / 2f)
+        // A search of 48 points in every direction, and not a pixel more.
+        assertEquals(120f - 48f, plate.left, 1f)
+        assertEquals(180f + 48f, plate.right, 1f)
+        assertEquals(115f - 48f, plate.top, 1f)
+        assertEquals(145f + 48f, plate.bottom, 1f)
     }
 
     @Test

@@ -18,12 +18,12 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
-      - name: Unit test output
+      - name: Compile output
         run: |
           set +e
-          ./gradlew :domain:test --console=plain > /tmp/t.log 2>&1
+          ./gradlew :domain:compileDebugUnitTestKotlin --console=plain > /tmp/t.log 2>&1
           echo "exit=$?"
-          grep -nE "FAILED|expected:|BubblePlate.*>" /tmp/t.log | head -60 > /tmp/short.log
+          sed -n '/^e: /p' /tmp/t.log | head -40 > /tmp/short.log
           cat /tmp/short.log
           while IFS= read -r line; do echo "::error::$line"; done < /tmp/short.log
           exit 0
