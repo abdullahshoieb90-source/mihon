@@ -1131,6 +1131,10 @@
     <string name="translation_color_black">Black</string>
     <string name="translation_color_red">Red</string>
     <string name="translation_color_yellow">Yellow</string>
+    <string name="pref_translation_plate_style">Bubble shape</string>
+    <string name="translation_plate_bubble">Follow the bubble</string>
+    <string name="translation_plate_rounded">Rounded box</string>
+    <string name="translation_plate_box">Plain box</string>
     <string name="pref_translation_bold">Bold lettering</string>
     <string name="pref_translation_letter_case">Letter case</string>
     <string name="translation_case_original">As written</string>

@@ -38,3 +38,16 @@ enum class TranslationLetterCase {
         LOWER -> text.lowercase()
     }
 }
+
+/**
+ * How a translation is placed over the original lettering.
+ *
+ * [BUBBLE] reads the art around each block and paints over the bubble itself, oval or boxed, in the bubble's own
+ * colour. [ROUNDED] keeps the plain rounded plate but grows it to the bubble, and [BOX] is the plain plate as it always
+ * was — the escape hatch for art the reading gets wrong.
+ */
+enum class TranslationPlateStyle {
+    BUBBLE,
+    ROUNDED,
+    BOX,
+}

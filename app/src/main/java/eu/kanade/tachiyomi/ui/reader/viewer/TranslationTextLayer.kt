@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
@@ -15,8 +16,12 @@ import android.text.TextPaint
 import android.view.View
 import eu.kanade.tachiyomi.data.translation.TranslatedPage
 import eu.kanade.tachiyomi.data.translation.TranslatedTextBlock
+import eu.kanade.tachiyomi.data.translation.detectBubblePlate
 import mihon.app.di.appGraph
+import tachiyomi.domain.translation.model.BubblePlate
+import tachiyomi.domain.translation.model.PlateShape
 import tachiyomi.domain.translation.model.TranslatedBlockArea
+import tachiyomi.domain.translation.model.TranslationPlateStyle
 import tachiyomi.domain.translation.model.TranslationTextColor
 import tachiyomi.domain.translation.model.indexAt
 import kotlin.math.max
@@ -34,6 +39,7 @@ class TranslationTextLayer(context: Context) : View(context) {
         set(value) {
             field = value
             lightCache.clear()
+            plateCache.clear()
             drawnRects.clear()
             drawnBlocks.clear()
             invalidate()
@@ -88,6 +94,14 @@ class TranslationTextLayer(context: Context) : View(context) {
     /** Sampling the page on every redraw makes zooming in the paged reader stutter. */
     private val lightCache = HashMap<TranslatedTextBlock, Boolean>()
 
+    /**
+     * The bubble each block sits in, read once per block from the page thumbnail.
+     *
+     * Kept here rather than in the cache file: a plate is a property of the art, not of the translation, so chapters
+     * translated before this existed get the better shape too, without being translated again.
+     */
+    private val plateCache = HashMap<TranslatedTextBlock, BubblePlate?>()
+
     init {
         // Taps belong to the page underneath, so the reader still reacts normally.
         isClickable = false
@@ -125,7 +139,18 @@ class TranslationTextLayer(context: Context) : View(context) {
         drawnRects.clear()
         drawnBlocks.clear()
         placed.forEach { (block, box) ->
-            drawBlock(canvas, block, bitmap, page.previewScale, box, margin, baseTextSize)
+            drawBlock(
+                canvas = canvas,
+                block = block,
+                preview = bitmap,
+                previewScale = page.previewScale,
+                blockRect = box,
+                margin = margin,
+                baseTextSize = baseTextSize,
+                mapper = mapper,
+                scaleX = scaleX,
+                scaleY = scaleY,
+            )
         }
     }
 
@@ -135,8 +160,15 @@ class TranslationTextLayer(context: Context) : View(context) {
         scaleX: Float,
         scaleY: Float,
         into: RectF,
+    ) = mapRect(block.box, mapper, scaleX, scaleY, into)
+
+    private fun mapRect(
+        box: Rect,
+        mapper: ((Float, Float) -> PointF?)?,
+        scaleX: Float,
+        scaleY: Float,
+        into: RectF,
     ) {
-        val box = block.box
         if (mapper != null) {
             val topLeft = mapper(box.left.toFloat(), box.top.toFloat())
             val bottomRight = mapper(box.right.toFloat(), box.bottom.toFloat())
@@ -161,6 +193,9 @@ class TranslationTextLayer(context: Context) : View(context) {
         blockRect: RectF,
         margin: Float,
         baseTextSize: Float,
+        mapper: ((Float, Float) -> PointF?)?,
+        scaleX: Float,
+        scaleY: Float,
     ) {
         val text = preferences.letterCase.get().apply(block.translated)
         if (text.isBlank()) return
@@ -168,63 +203,129 @@ class TranslationTextLayer(context: Context) : View(context) {
         // Set before measuring: the layout has to be built with the typeface it will be drawn with.
         textPaint.typeface = if (preferences.boldText.get()) boldTypeface else normalTypeface
 
-        val originalWidth = blockRect.width()
-        val originalHeight = blockRect.height()
+        // The bubble the lettering sits in, in this view's coordinates. Without one the block keeps the plain plate,
+        // which is also what a page with no readable surroundings gets, and what the reader asked for by choosing the
+        // plain shape.
+        val style = preferences.plateStyle.get()
+        val detectedPlate = if (style == TranslationPlateStyle.BOX) {
+            null
+        } else {
+            plateCache.getOrPut(block) { detectBubblePlate(preview, previewScale, block.box) }
+        }
+        val plate = detectedPlate?.let { detected ->
+            val rect = RectF()
+            mapRect(
+                Rect(
+                    detected.left.toInt(),
+                    detected.top.toInt(),
+                    detected.right.toInt(),
+                    detected.bottom.toInt(),
+                ),
+                mapper,
+                scaleX,
+                scaleY,
+                rect,
+            )
+            DetectedPlate(detected, rect)
+        }
+        // The shape to paint: the bubble's own, or a rounded box over it when the reader prefers that.
+        val target = plate?.rect ?: blockRect
+        val shape = if (style == TranslationPlateStyle.ROUNDED) PlateShape.ROUNDED else plate?.detected?.shape
+        val cornerRadius = when (shape) {
+            null -> DEFAULT_CORNER_DP * density
+            PlateShape.ROUNDED -> minOf(target.width(), target.height()) * ROUNDED_PLATE_CORNER
+            PlateShape.RECT -> plate?.detected?.cornerRadius ?: DEFAULT_CORNER_DP * density
+            PlateShape.STADIUM -> plate?.detected?.cornerRadius ?: (minOf(target.width(), target.height()) / 2f)
+        }
 
-        // Stay inside the bubble: a translation that spills over the art looks broken, so the text shrinks to fit
-        // the original lettering area instead of the box growing around it.
-        val boxWidth = originalWidth * MAX_WIDTH_GROWTH
-        val textWidth = (boxWidth - margin * 2f).toInt().coerceAtLeast(1)
+        val chosenColor = TranslationTextColor.of(preferences.textColor.get())
+        val plateIsLight = if (chosenColor != null) {
+            !isLightColor(chosenColor)
+        } else {
+            plate?.let { !it.detected.dark }
+                ?: lightCache.getOrPut(block) { isLightAround(preview, previewScale, block.box) }
+        }
+
+        // The colour the bubble actually is, so the plate blends into the art instead of flagging the page with a
+        // white rectangle. A colour the reader chose always wins over it.
+        val fill = chosenColor?.let { if (plateIsLight) Color.WHITE else Color.rgb(14, 14, 14) }
+            ?: plate?.takeIf { Color.alpha(it.detected.color) == 0xFF }?.let { blend(it.detected.color, plateIsLight) }
+            ?: if (plateIsLight) Color.WHITE else Color.rgb(14, 14, 14)
+
+        textPaint.color = chosenColor ?: if (plateIsLight) Color.BLACK else Color.WHITE
+
+        // An oval is only as wide as it is where the text sits: the plate is the shape, the text still has to fit the
+        // bubble's middle, which is narrower than its bounding box on the corners.
+        val isOval = shape == PlateShape.STADIUM
+        val usableWidth = if (isOval) target.width() * OVAL_TEXT_WIDTH else target.width()
+        val usableHeight = target.height()
+
+        // Stay inside the bubble: a translation that spills over the art looks broken, so the text shrinks to fit the
+        // original lettering area instead of the box growing around it.
+        val textWidth = (usableWidth * MAX_WIDTH_GROWTH - margin * 2f).toInt().coerceAtLeast(1)
 
         var textSize = baseTextSize
         var layout = layout(text, textSize, textWidth)
-        while (layout.height > originalHeight * MAX_GROWTH && textSize > MIN_TEXT_SIZE_DP * density) {
+        while (layout.height > usableHeight * MAX_GROWTH && textSize > MIN_TEXT_SIZE_DP * density) {
             textSize -= 0.5f * density
             layout = layout(text, textSize, textWidth)
         }
 
         val textHeight = layout.height.toFloat()
-
-        // The box never shrinks below the original lettering and never lets the text escape sideways.
-        val coverWidth = boxWidth
-        val coverHeight = max(originalHeight, textHeight + margin * 2f)
-
-        val centerX = blockRect.centerX()
-        val centerY = blockRect.centerY()
-
-        val left = centerX - coverWidth / 2f
-        val top = centerY - coverHeight / 2f
+        val centerX = target.centerX()
+        val centerY = target.centerY()
 
         // Kept for long taps: a bubble answers from the area its translation actually covers, not the art's box.
-        drawnRects += TranslatedBlockArea(left, top, left + coverWidth, top + coverHeight)
+        drawnRects += TranslatedBlockArea(
+            target.left,
+            target.top,
+            target.right,
+            target.bottom,
+        )
         drawnBlocks += block
 
-        val chosenColor = TranslationTextColor.of(preferences.textColor.get())
-        // Without a fixed colour the plate follows the page: a white bubble gets a white plate and black lettering.
-        // With one, the plate has to be the opposite of the lettering or the text disappears into it.
-        val plateIsLight = if (chosenColor != null) {
-            !isLightColor(chosenColor)
-        } else {
-            lightCache.getOrPut(block) { isLightAround(preview, previewScale, block.box) }
-        }
-        erasePaint.color = if (plateIsLight) Color.WHITE else Color.rgb(14, 14, 14)
-        val corner = 2f * density
+        erasePaint.color = fill
         canvas.save()
-        canvas.clipRect(left, top, left + coverWidth, top + coverHeight)
-        canvas.drawRoundRect(
-            left,
-            top,
-            left + coverWidth,
-            top + coverHeight,
-            corner,
-            corner,
-            erasePaint,
-        )
+        val path = platePath(target, cornerRadius, shape)
+        canvas.clipPath(path)
+        canvas.drawPath(path, erasePaint)
 
-        textPaint.color = chosenColor ?: if (plateIsLight) Color.BLACK else Color.WHITE
-        canvas.translate(centerX, top + (coverHeight - textHeight) / 2f)
+        canvas.translate(centerX, centerY - textHeight / 2f)
         layout.draw(canvas)
         canvas.restore()
+    }
+
+    /** A detected bubble, kept with its rectangle in this view's coordinates. */
+    private class DetectedPlate(val detected: BubblePlate, val rect: RectF)
+
+    /**
+     * The outline to paint: an oval for a round bubble, a rounded box for a soft one, and a barely-rounded box for a
+     * panel.
+     */
+    private fun platePath(rect: RectF, radius: Float, shape: PlateShape?): Path {
+        val path = Path()
+        when (shape) {
+            PlateShape.STADIUM -> path.addOval(rect, Path.Direction.CW)
+            null -> path.addRoundRect(rect, DEFAULT_CORNER_DP * density, DEFAULT_CORNER_DP * density, Path.Direction.CW)
+            else -> path.addRoundRect(rect, radius, radius, Path.Direction.CW)
+        }
+        return path
+    }
+
+    /**
+     * The bubble's own colour, kept if it stays readable: a plate that is too close to the lettering's colour turns
+     * the text back into art. Anything that wouldn't read gets the plain plate instead.
+     */
+    private fun blend(color: Int, plateIsLight: Boolean): Int {
+        val luma = Color.red(color) * 0.299 + Color.green(color) * 0.587 + Color.blue(color) * 0.114
+        val readable = if (plateIsLight) luma >= READABLE_PLATE_LUMA else luma <= 255 - READABLE_PLATE_LUMA
+        return if (readable) {
+            color
+        } else if (plateIsLight) {
+            Color.WHITE
+        } else {
+            Color.rgb(14, 14, 14)
+        }
     }
 
     /** True when the given colour is bright enough for a dark plate. */
@@ -280,5 +381,11 @@ class TranslationTextLayer(context: Context) : View(context) {
         private const val MAX_GROWTH = 1.5f
         private const val MAX_WIDTH_GROWTH = 1.12f
         private const val LUMA_THRESHOLD = 128.0
+        private const val OVAL_TEXT_WIDTH = 0.82f
+        private const val ROUNDED_PLATE_CORNER = 0.22f
+        private const val DEFAULT_CORNER_DP = 2f
+
+        /** A plate closer to the lettering's brightness than this is turned back into the plain one. */
+        private const val READABLE_PLATE_LUMA = 96.0
     }
 }

@@ -205,11 +205,13 @@ class PageTranslator(
     }
 
     /**
-     * A thumbnail wide enough to tell a white bubble from a dark panel, which is all the text layer needs.
+     * A thumbnail wide enough to tell a white bubble from a dark panel and to follow the bubble's outline, which is
+     * what the text layer needs. Higher than a thumbnail strictly has to be: the plate's edges are read from it, and
+     * at a smaller size a bubble's own outline falls between two pixels.
      */
     private fun decodePreview(file: File, displayWidth: Int): Bitmap? {
         var sampleSize = 1
-        while (displayWidth / sampleSize > PREVIEW_WIDTH) sampleSize *= 2
+        while (displayWidth / sampleSize > PREVIEW_WIDTH && sampleSize < MAX_PREVIEW_SAMPLE) sampleSize *= 2
         val options = BitmapFactory.Options().apply {
             inSampleSize = sampleSize
             inScaled = false
@@ -578,7 +580,10 @@ class PageTranslator(
         )
 
         private const val DISPLAY_PIXEL_BUDGET = 8_000_000L
-        private const val PREVIEW_WIDTH = 160
+        private const val PREVIEW_WIDTH = 480
+
+        /** A low-resolution page still needs the whole page kept: the plate reads the art, not just its colour. */
+        private const val MAX_PREVIEW_SAMPLE = 8
 
         /** Fewer readable blocks than this usually means the wrong script was guessed. */
         private const val MIN_BLOCKS_BEFORE_RETRY = 3
