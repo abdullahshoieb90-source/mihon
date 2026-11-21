@@ -212,6 +212,9 @@ class MainActivity : BaseActivity() {
 
             val context = LocalContext.current
 
+            // The app update switch lives in the settings, so the check follows it rather than the build alone.
+            val appUpdates by preferences.appUpdates.collectAsState()
+
             var incognito by remember { mutableStateOf(false) }
             val downloadOnly by preferences.downloadedOnly.collectAsState()
             val indexing by downloadCache.isInitializing.collectAsState()
@@ -309,7 +312,7 @@ class MainActivity : BaseActivity() {
                 HandleOnNewIntent(context = context, navigator = navigator)
 
                 if (!isBenchmarkBuildType) {
-                    if (isLaunch) CheckForUpdates()
+                    CheckForUpdates(appUpdates)
                     ShowOnboarding()
                     ShowDonationCampaign()
                 }
@@ -361,13 +364,13 @@ class MainActivity : BaseActivity() {
     }
 
     @Composable
-    private fun CheckForUpdates() {
+    private fun CheckForUpdates(appUpdatesEnabled: Boolean) {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
 
         // App updates
-        LaunchedEffect(Unit) {
-            if (!updaterEnabled) return@LaunchedEffect
+        LaunchedEffect(appUpdatesEnabled) {
+            if (!updaterEnabled || !appUpdatesEnabled) return@LaunchedEffect
             var lastCheck: Long? = null
             // The app can stay open for days now, so a cold start alone rarely checks.
             // Elapsed realtime keeps counting while the device sleeps, unlike the monotonic clock.

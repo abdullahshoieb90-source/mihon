@@ -51,6 +51,7 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - Ship an optimized build instead of a debug build, so the app starts faster and switches tabs, opens menus and lists sources without the debug build's overhead
 - Long press a translated bubble to see the original line beside it, copy it, keep its wording for the whole series, or translate the page again
 - Turn on the in-app updater and point it at this fork's own releases, so opening the app offers a new version with its notes and a button to download and install it
+  - Off by default, and switched on from Settings → Translation → App updates instead of happening on its own
 
 ### Removed
 - Remove "Custom hardware bitmap threshold" and "Custom display profile" advanced settings ([@wwww-wwww](https://github.com/wwww-wwww)) ([#3786](https://github.com/mihonapp/mihon/pull/3786))

@@ -39,6 +39,9 @@ class BasePreferences(
 
     val highQualityRenderer: Preference<Boolean> = preferenceStore.getBoolean("pref_high_quality_renderer_key", false)
 
+    // Off by default: a build only reaches out for a new version when the user asks it to.
+    val appUpdates: Preference<Boolean> = preferenceStore.getBoolean("pref_app_updates", false)
+
     val installationId: Preference<String> = preferenceStore.getString(Preference.appStateKey("installation_id"), "")
 
     val donationCampaignShown: Preference<Boolean> = preferenceStore.getBoolean(

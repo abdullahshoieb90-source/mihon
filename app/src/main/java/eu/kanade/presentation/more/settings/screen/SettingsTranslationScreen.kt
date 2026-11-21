@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.components.displayName
 import eu.kanade.presentation.more.settings.Preference
+import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.data.translation.LearnedPair
 import eu.kanade.tachiyomi.data.translation.LearnedStyle
 import eu.kanade.tachiyomi.data.translation.TranslationCacheStats
@@ -53,6 +54,7 @@ object SettingsTranslationScreen : SearchableSettings {
     override fun getPreferences(): List<Preference> {
         val context = LocalContext.current
         val preferences = remember { context.appGraph.translationPreferences }
+        val basePreferences = remember { context.appGraph.basePreferences }
         val provider by preferences.provider.collectAsState()
         val memory = remember { context.appGraph.translationMemoryStore }
         var styles by remember { mutableStateOf<List<LearnedStyle>>(emptyList()) }
@@ -308,6 +310,18 @@ object SettingsTranslationScreen : SearchableSettings {
                         visible = provider == TranslationProvider.CLAUDE,
                     ),
                 ),
+            ),
+            Preference.PreferenceGroup(
+                title = stringResource(MR.strings.pref_app_updates),
+                preferenceItems = listOf(
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = basePreferences.appUpdates,
+                        title = stringResource(MR.strings.pref_app_updates_automatic),
+                        subtitle = stringResource(MR.strings.pref_app_updates_automatic_summary),
+                    ),
+                ),
+                // Builds without the updater have nothing for the switch to turn on.
+                visible = BuildConfig.UPDATER_ENABLED,
             ),
         )
     }

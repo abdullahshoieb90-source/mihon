@@ -1018,6 +1018,9 @@
     <string name="translation_glossary_clear">مسح الكل</string>
     <string name="pref_translation_auto">ترجمة تلقائية عند الفتح</string>
     <string name="pref_translation_auto_summary">يُفعّل وضع الترجمة عند فتح الفصل</string>
+    <string name="pref_app_updates">تحديثات التطبيق</string>
+    <string name="pref_app_updates_automatic">البحث عن إصدارات جديدة</string>
+    <string name="pref_app_updates_automatic_summary">يعرض إصدارًا جديدًا والتطبيق مفتوح، مع ملاحظاته وزر لتثبيته. التحقق اليدوي من شاشة «حول».</string>
     <string name="translation_cache">الترجمات المحفوظة</string>
     <string name="translation_cache_summary">%1$d فصل · %2$s</string>
     <string name="translation_cache_clear">مسح الترجمات المحفوظة</string>
