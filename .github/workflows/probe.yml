@@ -29,7 +29,7 @@ jobs:
             echo '```'
             echo "=== FORMAT"; tail -30 /tmp/f.log
             echo "=== COMPILE"; tail -40 /tmp/c.log
-            echo "=== TEST"; tail -25 /tmp/t.log
+            echo "=== TEST"; grep -B2 -A12 -h "FAILED\|expected" /tmp/t.log | head -60
             echo '```'
           } >> /tmp/out.md
           gh pr comment 15 --body-file /tmp/out.md

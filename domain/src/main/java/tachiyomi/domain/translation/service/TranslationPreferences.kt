@@ -9,8 +9,8 @@ import tachiyomi.core.common.preference.getEnum
 import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationLetterCase
 import tachiyomi.domain.translation.model.TranslationPlateStyle
-import tachiyomi.domain.translation.model.TranslationReadingEngine
 import tachiyomi.domain.translation.model.TranslationProvider
+import tachiyomi.domain.translation.model.TranslationReadingEngine
 import tachiyomi.domain.translation.model.TranslationTextColor
 import java.util.Locale
 
