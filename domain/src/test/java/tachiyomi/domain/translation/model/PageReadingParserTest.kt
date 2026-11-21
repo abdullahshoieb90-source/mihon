@@ -122,6 +122,29 @@ class PageReadingParserTest {
     }
 
     @Test
+    fun `a box given in pixels is understood once the page size is known`() {
+        val answer = """
+            [{"original": "Hey", "translated": "هاي", "left": 100, "top": 200,
+              "right": 300, "bottom": 260}]
+        """.trimIndent()
+        val line = PageReadingParser.parse(answer, pageWidth = 1000, pageHeight = 2000).single()
+
+        assertEquals(0.1f, line.left, 0.01f)
+        assertEquals(0.1f, line.top, 0.01f)
+        assertEquals(0.3f, line.right, 0.01f)
+        assertEquals(0.13f, line.bottom, 0.01f)
+    }
+
+    @Test
+    fun `a pixel box is dropped when the page size is unknown, not guessed at`() {
+        val answer = """
+            [{"original": "Hey", "translated": "هاي", "left": 100, "top": 200,
+              "right": 300, "bottom": 260}]
+        """.trimIndent()
+        assertTrue(PageReadingParser.parse(answer).isEmpty())
+    }
+
+    @Test
     fun `an answer with no array at all is an empty reading, not a crash`() {
         assertTrue(PageReadingParser.parse("I can't see any text on this page.").isEmpty())
         assertTrue(PageReadingParser.parse("").isEmpty())

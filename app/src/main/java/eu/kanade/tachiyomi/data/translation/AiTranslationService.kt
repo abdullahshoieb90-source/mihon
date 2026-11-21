@@ -348,7 +348,7 @@ class AiTranslationService(
                             AiBackend.OPENAI -> body.jsonPath("choices", 0, "message", "content")
                             AiBackend.CLAUDE -> body.jsonPath("content", 0, "text")
                         } ?: throw TranslationException(TranslationError.PROVIDER_ERROR, "Unexpected answer")
-                        PageReadingParser.parse(answer).map { line -> line.forPage(width, height) }
+                        PageReadingParser.parse(answer, width, height).map { line -> line.forPage(width, height) }
                     }
                     result.getOrNull()?.takeIf { it.isNotEmpty() }?.let { return it }
                     val error = result.exceptionOrNull()
