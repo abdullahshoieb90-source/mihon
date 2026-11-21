@@ -37,6 +37,7 @@ import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationLetterCase
 import tachiyomi.domain.translation.model.TranslationPlateStyle
 import tachiyomi.domain.translation.model.TranslationProvider
+import tachiyomi.domain.translation.model.TranslationReadingEngine
 import tachiyomi.domain.translation.model.TranslationTextColor
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -138,6 +139,17 @@ object SettingsTranslationScreen : SearchableSettings {
             Preference.PreferenceGroup(
                 title = stringResource(MR.strings.translation_service),
                 preferenceItems = listOf(
+                    Preference.PreferenceItem.ListPreference(
+                        preference = preferences.readingEngine,
+                        entries = mapOf(
+                            TranslationReadingEngine.RECOGNIZER to
+                                stringResource(MR.strings.translation_engine_recognizer),
+                            TranslationReadingEngine.VISION to
+                                stringResource(MR.strings.translation_engine_vision),
+                        ),
+                        title = stringResource(MR.strings.pref_translation_engine),
+                        subtitle = stringResource(MR.strings.pref_translation_engine_summary),
+                    ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = preferences.autoTranslate,
                         title = stringResource(MR.strings.pref_translation_auto),
