@@ -10,6 +10,7 @@ import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationLetterCase
 import tachiyomi.domain.translation.model.TranslationPlateStyle
 import tachiyomi.domain.translation.model.TranslationProvider
+import tachiyomi.domain.translation.model.TranslationReadingEngine
 import tachiyomi.domain.translation.model.TranslationTextColor
 import java.util.Locale
 
@@ -95,6 +96,11 @@ class TranslationPreferences(
     val boldText: Preference<Boolean> = preferenceStore.getBoolean(
         "pref_translation_bold",
         true,
+    )
+
+    val readingEngine: Preference<TranslationReadingEngine> = preferenceStore.getEnum(
+        "pref_translation_reading_engine",
+        TranslationReadingEngine.RECOGNIZER,
     )
 
     val plateStyle: Preference<TranslationPlateStyle> = preferenceStore.getEnum(

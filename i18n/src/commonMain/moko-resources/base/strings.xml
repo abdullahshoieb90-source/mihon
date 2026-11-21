@@ -1098,6 +1098,10 @@
 
     <string name="pref_category_translation">Translation</string>
     <string name="pref_translation_summary">Service, source and target languages</string>
+    <string name="pref_translation_engine">What reads the page</string>
+    <string name="translation_engine_recognizer">On-device recognizer (free)</string>
+    <string name="translation_engine_vision">AI that sees the page (needs a key)</string>
+    <string name="pref_translation_engine_summary">The recognizer reads the lettering on the phone and translates the text. An AI that sees the page understands the scene, keeps a name the same, and reads lettering no recognizer can — one request per page.</string>
     <string name="pref_translation_provider">Service</string>
     <string name="pref_translation_source_language">Translate from</string>
     <string name="pref_translation_target_language">Translate to</string>

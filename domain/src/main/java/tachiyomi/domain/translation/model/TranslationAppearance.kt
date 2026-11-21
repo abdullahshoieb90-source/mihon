@@ -51,3 +51,16 @@ enum class TranslationPlateStyle {
     ROUNDED,
     BOX,
 }
+
+/**
+ * What reads a page before it is translated.
+ *
+ * [RECOGNIZER] reads the lettering on the device and then translates the text: free, works with every provider, and
+ * gets the words right. [VISION] sends the page itself to a model that can see it: it costs a request per page and
+ * needs a key, and it understands a page the way a person does — who is speaking, the tone, and lettering no
+ * on-device recognizer can read.
+ */
+enum class TranslationReadingEngine {
+    RECOGNIZER,
+    VISION,
+}

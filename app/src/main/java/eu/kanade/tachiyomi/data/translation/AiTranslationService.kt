@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.data.translation
 
 import android.util.Base64
+import dev.zacsweers.metro.Inject
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -22,6 +23,8 @@ import kotlinx.serialization.json.putJsonObject
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import tachiyomi.domain.translation.model.PageReadingLine
+import tachiyomi.domain.translation.model.PageReadingParser
 import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationProvider
 import tachiyomi.domain.translation.service.TranslationPreferences
@@ -36,6 +39,7 @@ import java.util.Locale
  */
 private const val MAX_HINT_LINES = 12
 
+@Inject
 class AiTranslationService(
     private val networkHelper: NetworkHelper,
     private val preferences: TranslationPreferences,
@@ -257,8 +261,8 @@ class AiTranslationService(
     }.trim()
 
     /**
-     * Reads the same page twice over — the original art and its human translation — and answers with the text of each
-     * bubble in both languages.
+     * Reads the same page twice over — the original art and its human translation — and answers with the text of
+     * each bubble in both languages.
      *
      * The translated copy is a picture, and no on-device recognizer reads Arabic lettering, so a model that can see
      * gets asked instead. Pairing the two versions by eye is also more reliable than matching bubble boxes.
@@ -303,6 +307,185 @@ class AiTranslationService(
     private fun isTemporary(detail: String?): Boolean {
         val text = detail?.lowercase().orEmpty()
         return TEMPORARY_MARKERS.any { it in text }
+    }
+
+    /**
+     * Reads a whole page — the art, the lettering and the situation — and answers with the translation of every
+     * bubble and where it sits.
+     *
+     * This is the one that understands a page instead of a line: the model sees who is speaking to whom, reads
+     * hand-lettered and decorated type that no on-device recognizer handles, and keeps a name the same across a page
+     * because it saw the whole page. It costs one request per page, which is why the reader turns it on in settings.
+     *
+     * The first backend with a key answers; a model that is merely busy is retried and then swapped for a cheaper one,
+     * and a rejected key moves on to the next service instead of failing the page.
+     */
+    suspend fun readPage(
+        image: ByteArray,
+        width: Int,
+        height: Int,
+        source: TranslationLanguage,
+        target: TranslationLanguage,
+        hints: List<LearnedPair> = emptyList(),
+    ): List<PageReadingLine> {
+        val withKeys = VISION_BACKENDS.filter { apiKey(it).isNotBlank() }
+        if (withKeys.isEmpty()) throw TranslationException(TranslationError.MISSING_API_KEY)
+        val preferred = runCatching { backendFor(preferences.provider.get()) }.getOrNull()
+        val backends = withKeys.sortedByDescending { it == preferred }
+
+        val instruction = pageReadingInstruction(source, target, hints)
+        var failure: TranslationException? = null
+        for (backend in backends) {
+            val key = apiKey(backend)
+            for (model in visionModels(backend)) {
+                for (attempt in 0 until VISION_ATTEMPTS) {
+                    if (attempt > 0) delay(VISION_RETRY_DELAY_MILLIS * attempt)
+                    val result = runCatching {
+                        val request = pageReadingRequest(backend, key, model, instruction, image)
+                        val body = networkHelper.client.executeForBody(request)
+                        val answer = when (backend) {
+                            AiBackend.GEMINI -> body.jsonPath("candidates", 0, "content", "parts", 0, "text")
+                            AiBackend.OPENAI -> body.jsonPath("choices", 0, "message", "content")
+                            AiBackend.CLAUDE -> body.jsonPath("content", 0, "text")
+                        } ?: throw TranslationException(TranslationError.PROVIDER_ERROR, "Unexpected answer")
+                        PageReadingParser.parse(answer, width, height).map { line -> line.forPage(width, height) }
+                    }
+                    result.getOrNull()?.takeIf { it.isNotEmpty() }?.let { return it }
+                    val error = result.exceptionOrNull()
+                    failure = error as? TranslationException
+                        ?: TranslationException(TranslationError.PROVIDER_ERROR, error?.message)
+                    if (failure?.error == TranslationError.MISSING_API_KEY) break
+                    if (!isTemporary(failure?.detail)) break
+                }
+            }
+        }
+        throw failure ?: TranslationException(TranslationError.PROVIDER_ERROR, "No AI service read the page")
+    }
+
+    /** The same page, asked for in each service's own dialect. */
+    private fun pageReadingRequest(
+        backend: AiBackend,
+        key: String,
+        model: String,
+        instruction: String,
+        image: ByteArray,
+    ): Request = when (backend) {
+        AiBackend.GEMINI -> geminiVisionRequest(key, model, instruction, image)
+        AiBackend.OPENAI -> openAiVisionRequest(key, model, instruction, image)
+        AiBackend.CLAUDE -> claudeVisionRequest(key, model, instruction, image)
+    }
+
+    private fun pageReadingInstruction(
+        source: TranslationLanguage,
+        target: TranslationLanguage,
+        hints: List<LearnedPair>,
+    ): String {
+        val from = if (source == TranslationLanguage.AUTO) {
+            "the language it is written in"
+        } else {
+            source.localeName()
+        }
+        val examples = hints
+            .filter { it.source.isNotBlank() && it.target.isNotBlank() }
+            .take(MAX_HINT_LINES)
+            .joinToString(separator = "\n") { "${it.source}  =>  ${it.target}" }
+        val reference = if (examples.isBlank()) {
+            ""
+        } else {
+            " Keep the names and the wording this series already uses, even when the lettering spells them " +
+                "differently:\n$examples"
+        }
+        val maturity = if (preferences.explicitContent.get()) {
+            " The comic is adult: keep its explicit wording literally, never soften, censor or summarise it."
+        } else {
+            ""
+        }
+        return "You are translating a comic page. Read the whole page: who is speaking to whom, the panel order, the " +
+            "tone of the scene. Find every speech bubble, caption and thought bubble, and translate its lettering " +
+            "from $from to ${target.localeName()}. Ignore sound effects drawn over the art and page numbers.$maturity" +
+            reference + PAGE_READING_FORMAT
+    }
+
+    /**
+     * One image, one instruction: the reading formats differ only in where the image goes, so the three builds below
+     * share this shape.
+     */
+    private fun geminiVisionRequest(key: String, model: String, instruction: String, image: ByteArray): Request {
+        val body = buildJsonObject {
+            putJsonArray("contents") {
+                addJsonObject {
+                    putJsonArray("parts") {
+                        addJsonObject { put("text", instruction) }
+                        addJsonObject { putBase64Image("inline_data", image) }
+                    }
+                }
+            }
+            putJsonObject("generationConfig") { put("temperature", 0.1) }
+        }
+        return Request.Builder()
+            .url("$GEMINI_ENDPOINT/models/$model:generateContent")
+            .header("x-goog-api-key", key)
+            .header("Content-Type", JSON)
+            .post(body.toString().toRequestBody(JSON_MEDIA))
+            .build()
+    }
+
+    private fun openAiVisionRequest(key: String, model: String, instruction: String, image: ByteArray): Request {
+        val body = buildJsonObject {
+            put("model", model)
+            put("temperature", 0.1)
+            putJsonArray("messages") {
+                addJsonObject {
+                    put("role", "user")
+                    putJsonArray("content") {
+                        addJsonObject {
+                            put("type", "text")
+                            put("text", instruction)
+                        }
+                        addJsonObject {
+                            put("type", "image_url")
+                            putJsonObject("image_url") { put("url", dataUrl(image)) }
+                        }
+                    }
+                }
+            }
+        }
+        return Request.Builder()
+            .url("$OPENAI_ENDPOINT/chat/completions")
+            .header("Authorization", "Bearer $key")
+            .header("Content-Type", JSON)
+            .post(body.toString().toRequestBody(JSON_MEDIA))
+            .build()
+    }
+
+    private fun claudeVisionRequest(key: String, model: String, instruction: String, image: ByteArray): Request {
+        val body = buildJsonObject {
+            put("model", model)
+            put("max_tokens", 4096)
+            put("temperature", 0.1)
+            putJsonArray("messages") {
+                addJsonObject {
+                    put("role", "user")
+                    putJsonArray("content") {
+                        addJsonObject {
+                            put("type", "text")
+                            put("text", instruction)
+                        }
+                        addJsonObject {
+                            put("type", "image")
+                            putJsonObject("source") { putClaudeImage(image) }
+                        }
+                    }
+                }
+            }
+        }
+        return Request.Builder()
+            .url("$CLAUDE_ENDPOINT/messages")
+            .header("x-api-key", key)
+            .header("anthropic-version", "2023-06-01")
+            .header("Content-Type", JSON)
+            .post(body.toString().toRequestBody(JSON_MEDIA))
+            .build()
     }
 
     private suspend fun requestPageReading(
@@ -460,6 +643,14 @@ class AiTranslationService(
         }
     }
 
+    /** The line's fractions turned into page pixels, which is what the text layer draws in. */
+    private fun PageReadingLine.forPage(width: Int, height: Int): PageReadingLine = copy(
+        left = left * width,
+        top = top * height,
+        right = right * width,
+        bottom = bottom * height,
+    )
+
     private fun referenceInstruction(hints: List<LearnedPair>): String {
         if (hints.isEmpty()) return ""
         val examples = hints
@@ -496,6 +687,13 @@ class AiTranslationService(
 
     companion object {
         private val VISION_BACKENDS = listOf(AiBackend.GEMINI, AiBackend.OPENAI, AiBackend.CLAUDE)
+
+        private const val PAGE_READING_FORMAT =
+            " Answer with only a JSON array, one entry per bubble, in reading order. Each entry looks like " +
+                "{\"original\": \"the lettering as it appears\", \"translated\": \"the translation\", " +
+                "\"left\": 0.1, \"top\": 0.2, \"right\": 0.5, \"bottom\": 0.3} where the four numbers are " +
+                "fractions of the page (0 is the left or top edge, 1 is the right or bottom edge). No commentary, " +
+                "no code fences."
 
         private const val PAGE_READING_INSTRUCTION =
             "The first image is a comic page in its original language. The second image is the same page translated " +
