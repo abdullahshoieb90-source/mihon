@@ -12,6 +12,9 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 
 ## [Unreleased]
 ### Added
+- Let a model that can see a page translate it, as an option: it reads the bubbles, who is speaking and the tone, and gives back each translation with where it belongs
+  - Off by default (Settings → Translation → What reads the page); the on-device recognizer stays the free default
+  - Falls back to the recognizer whenever there is no key, the answer is empty, or the request fails
 - Draw a translation over the bubble's own shape: the art around each block is read for its edge and colour, and the plate becomes an oval, a rounded bubble or a panel instead of always a rectangle
   - The shape is read from the cached page thumbnail, so saved translations pick it up without being translated again
   - New setting (Settings → Translation → Bubble shape) to follow the bubble, use a rounded box, or keep the plain box
