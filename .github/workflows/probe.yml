@@ -27,7 +27,9 @@ jobs:
           echo "test_exit=$?" >> /tmp/out.md
           {
             echo '```'
-            grep -hE "^e: |error:|FAILED|>>|was wrong|expected" /tmp/f.log /tmp/c.log /tmp/t.log | head -60 | sed 's/`/'"'"'/g'
+            echo "=== FORMAT"; tail -30 /tmp/f.log
+            echo "=== COMPILE"; tail -40 /tmp/c.log
+            echo "=== TEST"; tail -25 /tmp/t.log
             echo '```'
           } >> /tmp/out.md
           gh pr comment 15 --body-file /tmp/out.md
