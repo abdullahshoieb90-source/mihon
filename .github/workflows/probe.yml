@@ -11,15 +11,15 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - name: Format
+      - name: Probe
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          ./gradlew spotlessCheck --console=plain > /tmp/f.log 2>&1; echo "exit=$?"
-          tail -60 /tmp/f.log | while IFS= read -r line; do echo "::error::$line"; done || true
-      - name: Compile
-        run: |
-          ./gradlew :app:compileDebugKotlin --console=plain > /tmp/c.log 2>&1; echo "exit=$?"
-          grep -E "^e: |error:" /tmp/c.log | head -40 | while IFS= read -r line; do echo "::error::$line"; done || true
-      - name: Tests
-        run: |
-          ./gradlew :domain:test --console=plain > /tmp/t.log 2>&1; echo "exit=$?"
-          grep -E "^e: |FAILED|error:" /tmp/t.log | head -40 | while IFS= read -r line; do echo "::error::$line"; done || true
+          ./gradlew spotlessCheck --console=plain > /tmp/f.log 2>&1; echo "format_exit=$?" > /tmp/out.md
+          ./gradlew :app:compileDebugKotlin :domain:test --console=plain > /tmp/c.log 2>&1; echo "build_exit=$?" >> /tmp/out.md
+          {
+            echo '```'
+            grep -E "^e: |error:|FAILED|Violations|>> |was wrong" /tmp/f.log /tmp/c.log | head -60 | sed 's/`/'"'"'/g'
+            echo '```'
+          } >> /tmp/out.md
+          gh pr comment 15 --body-file /tmp/out.md
