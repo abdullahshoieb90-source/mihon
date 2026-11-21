@@ -2,6 +2,9 @@ name: Probe
 on:
   push:
     branches: [arena/3178ed81-mihon]
+permissions:
+  contents: read
+  pull-requests: write
 jobs:
   probe:
     runs-on: ubuntu-latest
@@ -15,11 +18,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ./gradlew spotlessCheck --console=plain > /tmp/f.log 2>&1; echo "format_exit=$?" > /tmp/out.md
-          ./gradlew :app:compileDebugKotlin :domain:test --console=plain > /tmp/c.log 2>&1; echo "build_exit=$?" >> /tmp/out.md
+          set +e
+          ./gradlew spotlessCheck --console=plain > /tmp/f.log 2>&1
+          echo "format_exit=$?" > /tmp/out.md
+          ./gradlew :app:compileDebugKotlin --console=plain > /tmp/c.log 2>&1
+          echo "compile_exit=$?" >> /tmp/out.md
+          ./gradlew :domain:test --console=plain > /tmp/t.log 2>&1
+          echo "test_exit=$?" >> /tmp/out.md
           {
             echo '```'
-            grep -E "^e: |error:|FAILED|Violations|>> |was wrong" /tmp/f.log /tmp/c.log | head -60 | sed 's/`/'"'"'/g'
+            grep -hE "^e: |error:|FAILED|>>|was wrong|expected" /tmp/f.log /tmp/c.log /tmp/t.log | head -60 | sed 's/`/'"'"'/g'
             echo '```'
           } >> /tmp/out.md
           gh pr comment 15 --body-file /tmp/out.md
