@@ -201,12 +201,6 @@ class TranslationCacheStore(
         files.sortedBy { it.lastModified() }.take(files.size - MAX_CHAPTERS).forEach { it.delete() }
     }
 
-    /**
-     * The page thumbnail, kept as a JPEG.
-     *
-     * Wider than the text needs to be legible: the bubble's outline is read from it when the page is drawn, so a
-     * coarse thumbnail would put an oval's edge between two pixels.
-     */
     private fun encodePreview(bitmap: Bitmap): String? = runCatching {
         val stream = ByteArrayOutputStream()
         if (!bitmap.compress(Bitmap.CompressFormat.JPEG, PREVIEW_QUALITY, stream)) return null
@@ -225,6 +219,6 @@ class TranslationCacheStore(
     companion object {
         private const val DIRECTORY = "translation-cache"
         private const val MAX_CHAPTERS = 300
-        private const val PREVIEW_QUALITY = 82
+        private const val PREVIEW_QUALITY = 80
     }
 }

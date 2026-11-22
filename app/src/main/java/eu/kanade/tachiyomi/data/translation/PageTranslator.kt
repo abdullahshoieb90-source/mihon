@@ -9,22 +9,17 @@ import android.os.ParcelFileDescriptor
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import logcat.LogPriority
-import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.translation.model.OcrScript
 import tachiyomi.domain.translation.model.TranslationLanguage
 import tachiyomi.domain.translation.model.TranslationProvider
-import tachiyomi.domain.translation.model.TranslationReadingEngine
 import tachiyomi.domain.translation.service.TranslationPreferences
 import java.io.File
 import java.io.InputStream
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 data class TranslatedTextBlock(
     val box: Rect,
@@ -61,7 +56,6 @@ class PageTranslator(
     private val memory: TranslationMemoryStore,
     private val glossary: GlossaryStore,
     private val cache: TranslationCacheStore,
-    private val ai: AiTranslationService,
 ) {
 
     suspend fun translate(
@@ -106,24 +100,6 @@ class PageTranslator(
                 if (displayWidth <= 0) throw TranslationException(TranslationError.PAGE_NOT_AVAILABLE)
                 val displayHeight = displayHeight(nativeWidth, nativeHeight, displayWidth)
                 val preview = decodePreview(file, displayWidth)
-
-                // Asking a model that can see the page is a different way of translating, not a better version of the
-                // same one: it reads who is speaking and the tone, and it handles lettering no recognizer can. When it
-                // is chosen it still has to fall back, or a missing key would leave the reader with an empty page.
-                if (preferences.readingEngine.get() == TranslationReadingEngine.VISION) {
-                    val read = readWithVision(
-                        file = file,
-                        displayWidth = displayWidth,
-                        displayHeight = displayHeight,
-                        preview = preview,
-                        pageIndex = pageIndex,
-                        mangaId = mangaId,
-                        seriesTitle = seriesTitle,
-                        chapterId = chapterId,
-                    )
-                    if (read != null) return@withContext read
-                }
-
                 // Dots of an ellipsis, page numbers and sound effects are recognized as "0000" or "…" all the
                 // time; translating those only paints boxes over the art.
                 val recognition = recognize(decoder, nativeWidth, nativeHeight, source)
@@ -229,13 +205,11 @@ class PageTranslator(
     }
 
     /**
-     * A thumbnail wide enough to tell a white bubble from a dark panel and to follow the bubble's outline, which is
-     * what the text layer needs. Higher than a thumbnail strictly has to be: the plate's edges are read from it, and
-     * at a smaller size a bubble's own outline falls between two pixels.
+     * A thumbnail wide enough to tell a white bubble from a dark panel, which is all the text layer needs.
      */
     private fun decodePreview(file: File, displayWidth: Int): Bitmap? {
         var sampleSize = 1
-        while (displayWidth / sampleSize > PREVIEW_WIDTH && sampleSize < MAX_PREVIEW_SAMPLE) sampleSize *= 2
+        while (displayWidth / sampleSize > PREVIEW_WIDTH) sampleSize *= 2
         val options = BitmapFactory.Options().apply {
             inSampleSize = sampleSize
             inScaled = false
@@ -518,74 +492,6 @@ class PageTranslator(
     }
 
     /**
-     * The page translated by a model that can see it.
-     *
-     * The whole page goes out as one picture, and comes back with the bubbles, their boxes and their translations. It
-     * returns null rather than throwing: the reading engine is a preference, so a key that expired or a page no model
-     * would read costs a slower translation, not a missing one.
-     */
-    private suspend fun readWithVision(
-        file: File,
-        displayWidth: Int,
-        displayHeight: Int,
-        preview: Bitmap?,
-        pageIndex: Int,
-        mangaId: Long?,
-        seriesTitle: String?,
-        chapterId: Long?,
-    ): TranslatedPage? {
-        val source = translator.sourceLanguage
-        val target = translator.targetLanguage
-        val seriesKey = seriesTitle?.takeIf { it.isNotBlank() }?.let { seriesKeyOf(it) }
-            ?: mangaId?.takeIf { it > 0 }?.toString()
-        // What a translated copy of this series already settled on, so the page follows it instead of inventing names.
-        val hints = seriesKey?.let { memory.all(it) }.orEmpty()
-
-        val bytes = runCatching { file.readBytes() }.getOrNull() ?: return null
-        val lines = runCatching {
-            ai.readPage(
-                image = bytes,
-                width = displayWidth,
-                height = displayHeight,
-                source = source,
-                target = target,
-                hints = hints,
-            )
-        }.onFailure { error ->
-            if (error is CancellationException) throw error
-            logcat(LogPriority.WARN, error) { "The page could not be read by a model, translating it the old way" }
-        }.getOrNull()
-        if (lines.isNullOrEmpty()) return null
-
-        val translated = TranslatedPage(
-            pageIndex = pageIndex,
-            width = displayWidth,
-            height = displayHeight,
-            preview = preview,
-            previewScale = preview?.let { it.width.toFloat() / displayWidth } ?: 1f,
-            blocks = lines.map { line ->
-                TranslatedTextBlock(
-                    box = Rect(
-                        line.left.roundToInt(),
-                        line.top.roundToInt(),
-                        line.right.roundToInt(),
-                        line.bottom.roundToInt(),
-                    ),
-                    original = line.original,
-                    translated = line.translated,
-                    lines = 1,
-                )
-            },
-            source = source,
-            target = target,
-        )
-        if (mangaId != null && mangaId > 0 && chapterId != null && chapterId > 0) {
-            cache.save(mangaId, chapterId, translated, preferences.provider.get().name)
-        }
-        return translated
-    }
-
-    /**
      * Translates every block, but doesn't let one bad response cost the whole page — anything that fails is simply
      * left untranslated instead of aborting the page.
      */
@@ -672,10 +578,7 @@ class PageTranslator(
         )
 
         private const val DISPLAY_PIXEL_BUDGET = 8_000_000L
-        private const val PREVIEW_WIDTH = 480
-
-        /** A low-resolution page still needs the whole page kept: the plate reads the art, not just its colour. */
-        private const val MAX_PREVIEW_SAMPLE = 8
+        private const val PREVIEW_WIDTH = 160
 
         /** Fewer readable blocks than this usually means the wrong script was guessed. */
         private const val MIN_BLOCKS_BEFORE_RETRY = 3
