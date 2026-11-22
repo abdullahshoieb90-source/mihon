@@ -1098,10 +1098,6 @@
 
     <string name="pref_category_translation">Translation</string>
     <string name="pref_translation_summary">Service, source and target languages</string>
-    <string name="pref_translation_engine">What reads the page</string>
-    <string name="translation_engine_recognizer">On-device recognizer (free)</string>
-    <string name="translation_engine_vision">AI that sees the page (needs a key)</string>
-    <string name="pref_translation_engine_summary">The recognizer reads the lettering on the phone and translates the text. An AI that sees the page understands the scene, keeps a name the same, and reads lettering no recognizer can — one request per page.</string>
     <string name="pref_translation_provider">Service</string>
     <string name="pref_translation_source_language">Translate from</string>
     <string name="pref_translation_target_language">Translate to</string>
@@ -1135,10 +1131,6 @@
     <string name="translation_color_black">Black</string>
     <string name="translation_color_red">Red</string>
     <string name="translation_color_yellow">Yellow</string>
-    <string name="pref_translation_plate_style">Bubble shape</string>
-    <string name="translation_plate_bubble">Follow the bubble</string>
-    <string name="translation_plate_rounded">Rounded box</string>
-    <string name="translation_plate_box">Plain box</string>
     <string name="pref_translation_bold">Bold lettering</string>
     <string name="pref_translation_letter_case">Letter case</string>
     <string name="translation_case_original">As written</string>

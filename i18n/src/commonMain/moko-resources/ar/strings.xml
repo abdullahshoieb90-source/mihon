@@ -910,10 +910,6 @@
 
     <string name="pref_category_translation">الترجمة</string>
     <string name="pref_translation_summary">الخدمة ولغة المصدر والهدف</string>
-    <string name="pref_translation_engine">اللي بيقرأ الصفحة</string>
-    <string name="translation_engine_recognizer">قارئ على الجهاز (مجاني)</string>
-    <string name="translation_engine_vision">ذكاء اصطناعي شايف الصفحة (محتاج مفتاح)</string>
-    <string name="pref_translation_engine_summary">القارئ على الجهاز بيقرأ الحروف ويترجم النص. الذكاء اللي شايف الصفحة بيفهم المشهد، ويثبّت أسماء الشخصيات، ويقرأ خطوط مايقدرش القارئ يقراها — طلب واحد لكل صفحة.</string>
     <string name="pref_translation_provider">الخدمة</string>
     <string name="pref_translation_source_language">الترجمة من</string>
     <string name="pref_translation_target_language">الترجمة إلى</string>
@@ -947,10 +943,6 @@
     <string name="translation_color_black">أسود</string>
     <string name="translation_color_red">أحمر</string>
     <string name="translation_color_yellow">أصفر</string>
-    <string name="pref_translation_plate_style">شكل الفقاعة</string>
-    <string name="translation_plate_bubble">يتبع الفقاعة</string>
-    <string name="translation_plate_rounded">مستطيل بحواف دائرية</string>
-    <string name="translation_plate_box">مربّع عادي</string>
     <string name="pref_translation_bold">خط عريض</string>
     <string name="pref_translation_letter_case">حالة الأحرف</string>
     <string name="translation_case_original">الأصلية</string>

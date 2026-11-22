@@ -70,15 +70,6 @@ class TranslationMemoryStore(
 
     suspend fun count(seriesKey: String): Int = load(seriesKey).size
 
-    /**
-     * Everything this series already settled on, newest last.
-     *
-     * [recall] needs the page's text to score against; a model that is about to read the page has no text yet, so it
-     * gets the series' whole memory instead and picks the names it needs itself.
-     */
-    suspend fun all(seriesKey: String, limit: Int = MAX_HINTS): List<LearnedPair> =
-        load(seriesKey).takeLast(limit)
-
     /** Adds what was just learned, newest reading winning over an older one for the same source line. */
     suspend fun remember(
         seriesKey: String,

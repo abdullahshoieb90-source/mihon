@@ -11,13 +11,11 @@ The format is a modified version of [Keep a Changelog](https://keepachangelog.co
 - `Other` - for technical stuff.
 
 ## [Unreleased]
+### Removed
+- The bubble-shaped plate and the AI page reader added in 1.21 and 1.22: a translation is drawn on a rounded box again, exactly as it was in 1.20, and nothing is sent to a vision model
+  - Neither setting exists any more, and no page is translated differently from before
+
 ### Added
-- Let a model that can see a page translate it, as an option: it reads the bubbles, who is speaking and the tone, and gives back each translation with where it belongs
-  - Off by default (Settings → Translation → What reads the page); the on-device recognizer stays the free default
-  - Falls back to the recognizer whenever there is no key, the answer is empty, or the request fails
-- Draw a translation over the bubble's own shape: the art around each block is read for its edge and colour, and the plate becomes an oval, a rounded bubble or a panel instead of always a rectangle
-  - The shape is read from the cached page thumbnail, so saved translations pick it up without being translated again
-  - New setting (Settings → Translation → Bubble shape) to follow the bubble, use a rounded box, or keep the plain box
 - Translate a downloaded chapter ahead of reading it, from the chapter's selection bar or as a swipe action, in the background with a progress notification and a cancel action
   - Refuses chapters that are not downloaded and says why, and leaves archived (CBZ) chapters alone
   - A page that fails is skipped instead of ending the run

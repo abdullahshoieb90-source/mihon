@@ -38,29 +38,3 @@ enum class TranslationLetterCase {
         LOWER -> text.lowercase()
     }
 }
-
-/**
- * How a translation is placed over the original lettering.
- *
- * [BUBBLE] reads the art around each block and paints over the bubble itself, oval or boxed, in the bubble's own
- * colour. [ROUNDED] keeps the plain rounded plate but grows it to the bubble, and [BOX] is the plain plate as it always
- * was — the escape hatch for art the reading gets wrong.
- */
-enum class TranslationPlateStyle {
-    BUBBLE,
-    ROUNDED,
-    BOX,
-}
-
-/**
- * What reads a page before it is translated.
- *
- * [RECOGNIZER] reads the lettering on the device and then translates the text: free, works with every provider, and
- * gets the words right. [VISION] sends the page itself to a model that can see it: it costs a request per page and
- * needs a key, and it understands a page the way a person does — who is speaking, the tone, and lettering no
- * on-device recognizer can read.
- */
-enum class TranslationReadingEngine {
-    RECOGNIZER,
-    VISION,
-}
